@@ -22,6 +22,8 @@ export default defineNuxtConfig({
     // wired so that route middleware + serverSupabaseClient/User are available
     // for the auth swap — but redirect is disabled so anonymous play still works.
     redirect: false,
+    url: process.env.SUPABASE_URL || 'http://localhost:0',
+    key: process.env.SUPABASE_KEY || 'placeholder',
   },
 
   runtimeConfig: {
