@@ -3,29 +3,34 @@ definePageMeta({ layout: false })
 
 const user = useSupabaseUser()
 const supabase = useSupabaseClient()
+const redirect = useSupabaseCookieRedirect()
 const route = useRoute()
 
 const denied = computed(() => route.query.denied === 'admin')
+const email = ref('')
+const password = ref('')
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-async function signInWithGoogle() {
+async function signIn() {
+  if (loading.value) return
   loading.value = true
   error.value = null
-  const redirectTo = `${window.location.origin}/confirm`
-  const { error: err } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo },
+  const { error: err } = await supabase.auth.signInWithPassword({
+    email: email.value.trim(),
+    password: password.value,
   })
   if (err) {
     error.value = err.message
     loading.value = false
   }
+  // On success, the watchEffect below handles navigation once the session lands.
 }
 
-// If somehow we land here already authed (e.g. back button), bounce to home.
 watchEffect(() => {
-  if (user.value) navigateTo('/')
+  if (!user.value) return
+  const dest = redirect.pluck() || '/'
+  navigateTo(dest, { replace: true })
 })
 </script>
 
@@ -38,7 +43,7 @@ watchEffect(() => {
         </div>
         <h1 class="text-3xl font-bold tracking-tight">Sign in</h1>
         <p class="text-slate-400 text-sm mt-2">
-          Required to access the admin dashboard.
+          Use the email and password your admin gave you.
         </p>
       </div>
 
@@ -49,16 +54,40 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <UButton
-        block
-        size="lg"
-        color="primary"
-        :loading="loading"
-        icon="i-lucide-log-in"
-        @click="signInWithGoogle"
-      >
-        Continue with Google
-      </UButton>
+      <form class="space-y-4" @submit.prevent="signIn">
+        <UFormGroup label="Email" name="email">
+          <UInput
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            placeholder="you@visma.com"
+            required
+            :disabled="loading"
+          />
+        </UFormGroup>
+
+        <UFormGroup label="Password" name="password">
+          <UInput
+            v-model="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+            :disabled="loading"
+          />
+        </UFormGroup>
+
+        <UButton
+          block
+          size="lg"
+          color="primary"
+          icon="i-lucide-log-in"
+          type="submit"
+          :loading="loading"
+        >
+          Sign in
+        </UButton>
+      </form>
 
       <div v-if="error" class="mt-4 text-sm text-rose-400 ticker-mono text-center">
         {{ error }}
@@ -66,8 +95,8 @@ watchEffect(() => {
 
       <p class="mt-6 text-xs text-slate-500 text-center">
         Only emails listed in <code class="ticker-mono">ADMIN_EMAILS</code> can reach
-        <NuxtLink to="/" class="text-emerald-300 hover:underline">/admin</NuxtLink>.
-        Everyone else can play anonymously at
+        <NuxtLink to="/admin" class="text-emerald-300 hover:underline">/admin</NuxtLink>.
+        Everyone else plays via
         <NuxtLink to="/" class="text-emerald-300 hover:underline">Code Check</NuxtLink>.
       </p>
     </div>
