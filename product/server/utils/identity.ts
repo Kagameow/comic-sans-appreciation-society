@@ -15,7 +15,13 @@ export async function currentPlayer(event: H3Event): Promise<Player | null> {
     email: user.email,
     name: displayNameForUser(user),
     avatar: null,
+    avatarUrl: avatarUrlForUser(user),
   })
+}
+
+function avatarUrlForUser(user: { user_metadata?: Record<string, unknown> | null }): string | null {
+  const url = user.user_metadata?.avatar_url
+  return typeof url === 'string' && url.trim() ? url.trim() : null
 }
 
 function displayNameForUser(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {

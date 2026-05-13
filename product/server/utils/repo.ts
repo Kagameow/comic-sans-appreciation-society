@@ -102,12 +102,14 @@ export function useRepo() {
      * (no stale or seed-derived names sticking around after dev iterations).
      * Seed players are leaderboard decoys — they are never claimed by email.
      */
-    ensurePlayerForUser(user: { id: string; email?: string | null; name?: string | null; avatar?: string | null }): Player {
+    ensurePlayerForUser(user: { id: string; email?: string | null; name?: string | null; avatar?: string | null; avatarUrl?: string | null }): Player {
       const email = user.email?.toLowerCase() ?? ''
       const name = user.name?.trim() || (email ? email.split('@')[0]! : 'Anonymous')
+      const avatarUrl = user.avatarUrl?.trim() || undefined
       const existing = store.players.find(x => x.userId === user.id)
       if (existing) {
         existing.name = name
+        existing.avatarUrl = avatarUrl
         if (email) existing.email = email
         return existing
       }
@@ -117,6 +119,7 @@ export function useRepo() {
         email: email || undefined,
         name,
         avatar: user.avatar || '🦊',
+        avatarUrl,
         points: 0,
         victories: 0,
         gems: 0,
