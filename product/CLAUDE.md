@@ -20,7 +20,7 @@ pnpm build      # nuxt build
 pnpm typecheck  # nuxt typecheck (vue-tsc)
 ```
 
-`.env.local` must contain `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_KEY`, and `ADMIN_EMAILS` (see `.env.example`). The Supabase project also needs the Google OAuth provider enabled and `http://localhost:3000/confirm` whitelisted under Authentication → URL Configuration.
+`.env` must contain `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_KEY`, and `ADMIN_EMAILS` (see `.env.example`). Nuxt 4's CLI only auto-loads `.env` — `.env.local` is **not** picked up, and without these vars `@nuxtjs/supabase`'s server plugin throws during setup, the failure is swallowed by Nuxt's plugin try/catch, and every SSR request 500s on a downstream `$pinia is undefined` because plugin hooks register before setup runs. The Supabase project also needs the Google OAuth provider enabled and `http://localhost:3000/confirm` whitelisted under Authentication → URL Configuration.
 
 ## Architecture
 
