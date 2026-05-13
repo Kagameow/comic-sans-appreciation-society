@@ -7,7 +7,11 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     '@nuxtjs/supabase',
     '@vueuse/nuxt',
+    '@rstore/nuxt',
   ],
+
+  // rstoreDirs default to ['rstore'] resolved relative to srcDir (app/), so
+  // app/rstore/ and app/rstore/plugins/ are scanned automatically.
 
   css: ['~/assets/css/main.css'],
 

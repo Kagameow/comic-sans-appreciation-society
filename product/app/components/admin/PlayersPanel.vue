@@ -33,7 +33,14 @@ const filtered = computed(() =>
         <tbody>
           <tr v-for="p in filtered" :key="p.id" class="border-t border-white/10">
             <td class="px-4 py-2 flex items-center gap-2">
-              <span class="text-lg">{{ p.avatar }}</span> {{ p.name }}
+              <img
+                v-if="p.avatarUrl"
+                :src="p.avatarUrl"
+                :alt="p.name"
+                class="h-6 w-6 rounded-full object-cover"
+              />
+              <span v-else class="text-lg">{{ p.avatar }}</span>
+              {{ p.name }}
             </td>
             <td class="px-4 py-2">
               <div class="flex items-center justify-center gap-1">

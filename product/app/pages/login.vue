@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import type { FormSubmitEvent } from '@nuxt/ui'
 
 definePageMeta({ layout: false })
 
 const user = useSupabaseUser()
-const supabase = useSupabaseClient()
 const redirect = useSupabaseCookieRedirect()
 const route = useRoute()
+const store = useStore()
 
 const denied = computed(() => route.query.denied === 'admin')
 
@@ -15,34 +14,22 @@ const schema = v.object({
   email: v.pipe(v.string(), v.trim(), v.email('Enter a valid email')),
   password: v.pipe(v.string(), v.minLength(6, 'Must be at least 6 characters')),
 })
-type Schema = v.InferOutput<typeof schema>
 
-const state = reactive<Partial<Schema>>({
-  email: '',
-  password: '',
+const loginForm = store.session.createForm({
+  schema,
+  defaultValues: () => ({ email: '', password: '' }),
 })
 
-const loading = ref(false)
-const error = ref<string | null>(null)
-
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  if (loading.value) return
-  loading.value = true
-  error.value = null
-  const { error: err } = await supabase.auth.signInWithPassword({
-    email: event.data.email,
-    password: event.data.password,
-  })
-  if (err) {
-    error.value = err.message
-    loading.value = false
-  }
-}
-
-watchEffect(() => {
-  if (!user.value) return
+function navigateAfterAuth() {
   const dest = redirect.pluck() || '/'
   navigateTo(dest, { replace: true })
+}
+
+loginForm.$onSuccess(() => { navigateAfterAuth() })
+
+// Already authed (cookie session) — bounce out immediately.
+watchEffect(() => {
+  if (user.value) navigateAfterAuth()
 })
 </script>
 
@@ -66,26 +53,26 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
+      <form class="space-y-4" @submit.prevent="loginForm()">
         <UFormField label="Email" name="email">
           <UInput
-            v-model="state.email"
+            v-model="loginForm.email"
             type="email"
             autocomplete="email"
             placeholder="you@visma.com"
             class="w-full"
-            :disabled="loading"
+            :disabled="loginForm.$loading"
           />
         </UFormField>
 
         <UFormField label="Password" name="password">
           <UInput
-            v-model="state.password"
+            v-model="loginForm.password"
             type="password"
             autocomplete="current-password"
             placeholder="••••••••"
             class="w-full"
-            :disabled="loading"
+            :disabled="loginForm.$loading"
           />
         </UFormField>
 
@@ -95,14 +82,14 @@ watchEffect(() => {
           color="primary"
           icon="i-lucide-log-in"
           type="submit"
-          :loading="loading"
+          :loading="loginForm.$loading"
         >
           Sign in
         </UButton>
-      </UForm>
+      </form>
 
-      <div v-if="error" class="mt-4 text-sm text-rose-400 ticker-mono text-center">
-        {{ error }}
+      <div v-if="loginForm.$error" class="mt-4 text-sm text-rose-400 ticker-mono text-center">
+        {{ loginForm.$error.message }}
       </div>
 
       <p class="mt-6 text-xs text-slate-500 text-center">

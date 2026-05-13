@@ -25,7 +25,17 @@ const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${prop
     <div :class="['ticker-mono font-bold shrink-0', isPodium ? 'text-2xl sm:text-3xl w-8 sm:w-12' : 'text-base sm:text-lg w-8 sm:w-10 text-slate-400']">
       {{ rankLabel }}
     </div>
+    <img
+      v-if="player.avatarUrl"
+      :src="player.avatarUrl"
+      :alt="player.name"
+      :class="[
+        'rounded-full object-cover shrink-0',
+        isPodium ? 'h-10 w-10 sm:h-14 sm:w-14' : 'h-9 w-9 sm:h-10 sm:w-10',
+      ]"
+    />
     <div
+      v-else
       :class="[
         'rounded-full bg-white/10 flex items-center justify-center shrink-0',
         isPodium ? 'h-10 w-10 sm:h-14 sm:w-14 text-2xl sm:text-3xl' : 'h-9 w-9 sm:h-10 sm:w-10 text-lg sm:text-xl',

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import * as v from 'valibot'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import { createFormObject } from '@rstore/vue'
 
 const { user, isSignedIn, isAdmin, signOut } = useAuthSession()
 const supabase = useSupabaseClient()
+const store = useStore()
 const game = useGameStore()
 const toast = useToast()
 
@@ -13,13 +14,19 @@ const currentDisplay = computed(() => {
   return typeof dn === 'string' ? dn : ''
 })
 
+const currentAvatarUrl = computed(() => {
+  const meta = (user.value?.user_metadata ?? {}) as Record<string, unknown>
+  const url = meta.avatar_url
+  return typeof url === 'string' && url ? url : null
+})
+
 const displayName = computed(() => {
   if (currentDisplay.value) return currentDisplay.value
   if (game.me?.name) return game.me.name
   return user.value?.email ?? ''
 })
 
-const schema = v.object({
+const nameSchema = v.object({
   display_name: v.pipe(
     v.string(),
     v.trim(),
@@ -27,32 +34,57 @@ const schema = v.object({
     v.maxLength(40, 'Max 40 characters'),
   ),
 })
-type Schema = v.InferOutput<typeof schema>
 
-const state = reactive<Partial<Schema>>({ display_name: '' })
-const saving = ref(false)
-const saveError = ref<string | null>(null)
+const nameForm = createFormObject({
+  defaultValues: () => ({ display_name: currentDisplay.value }),
+  schema: nameSchema,
+  async submit(values): Promise<{ display_name: string }> {
+    if (!user.value) throw new Error('Not signed in')
+    const display_name = values.display_name as string
+    await store.currentUser.update({ display_name }, { key: user.value.id })
+    return { display_name }
+  },
+  resetOnSuccess: false,
+})
 
-watch(currentDisplay, v => { state.display_name = v }, { immediate: true })
-
-const nameDirty = computed(() =>
-  !!state.display_name && state.display_name.trim() !== currentDisplay.value,
-)
-
-async function onSubmit(event: FormSubmitEvent<Schema>) {
-  if (saving.value) return
-  saving.value = true
-  saveError.value = null
-  const { error } = await supabase.auth.updateUser({
-    data: { display_name: event.data.display_name },
-  })
-  saving.value = false
-  if (error) {
-    saveError.value = error.message
-    return
-  }
+nameForm.$onSuccess(() => {
   toast.add({ title: 'Display name saved', color: 'success', icon: 'i-lucide-check' })
-}
+})
+
+const avatarSchema = v.object({
+  file: v.pipe(
+    v.instance(File, 'Pick an image'),
+    v.check(f => f.size <= 2_000_000, 'Max 2MB'),
+    v.check(f => f.type.startsWith('image/'), 'Images only'),
+  ),
+})
+
+const avatarForm = createFormObject({
+  defaultValues: () => ({ file: null as File | null }),
+  schema: avatarSchema,
+  async submit(values): Promise<{ file: File | null }> {
+    if (!user.value || !values.file) throw new Error('Not signed in')
+    const uid = user.value.id
+    const ext = values.file.name.split('.').pop()?.toLowerCase() || 'png'
+    const path = `${uid}/${Date.now()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, values.file, {
+      contentType: values.file.type,
+    })
+    if (upErr) throw new Error(upErr.message)
+    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
+    await store.currentUser.update({ avatar_url: pub.publicUrl }, { key: uid })
+    return { file: values.file }
+  },
+  resetOnSuccess: true,
+})
+
+avatarForm.$onSuccess(() => {
+  toast.add({ title: 'Avatar updated', color: 'success', icon: 'i-lucide-check' })
+})
+
+watch(() => avatarForm.file, (f) => {
+  if (f instanceof File) avatarForm()
+})
 </script>
 
 <template>
@@ -74,7 +106,14 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       >
         {{ game.me.points.toLocaleString() }}<span class="hidden sm:inline"> pts</span>
       </span>
+      <img
+        v-if="currentAvatarUrl"
+        :src="currentAvatarUrl"
+        :alt="displayName"
+        class="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover"
+      />
       <div
+        v-else
         class="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/10 flex items-center justify-center text-base sm:text-lg"
       >
         {{ game.me?.avatar ?? '👤' }}
@@ -91,28 +130,48 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     <template #content>
       <div class="p-3 w-72 space-y-3">
         <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
-        <UForm :schema="schema" :state="state" @submit="onSubmit">
-          <UFormField label="Display name" name="display_name">
+
+        <form @submit.prevent="nameForm()">
+          <UFormField label="Display name">
             <div class="flex gap-2">
               <UInput
-                v-model="state.display_name"
+                v-model="nameForm.display_name"
                 size="sm"
                 class="flex-1"
                 placeholder="Your name"
-                :disabled="saving"
+                :disabled="nameForm.$loading"
               />
               <UButton
                 type="submit"
                 size="sm"
-                :loading="saving"
-                :disabled="!nameDirty"
+                :loading="nameForm.$loading"
+                :disabled="!nameForm.$hasChanges()"
               >
                 Save
               </UButton>
             </div>
           </UFormField>
-        </UForm>
-        <p v-if="saveError" class="text-xs text-rose-400 ticker-mono">{{ saveError }}</p>
+          <p v-if="nameForm.$error" class="mt-1 text-xs text-rose-400 ticker-mono">
+            {{ nameForm.$error.message }}
+          </p>
+        </form>
+
+        <div>
+          <UFormField label="Avatar">
+            <UFileUpload
+              v-model="avatarForm.file"
+              accept="image/*"
+              :label="avatarForm.$loading ? 'Uploading…' : 'Drop or click to upload'"
+              description="Max 2MB · PNG / JPG / WebP"
+              class="w-full"
+              :disabled="avatarForm.$loading"
+            />
+          </UFormField>
+          <p v-if="avatarForm.$error" class="mt-1 text-xs text-rose-400 ticker-mono">
+            {{ avatarForm.$error.message }}
+          </p>
+        </div>
+
         <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
         <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
           Sign out
