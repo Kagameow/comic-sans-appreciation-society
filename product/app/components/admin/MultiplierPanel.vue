@@ -28,7 +28,7 @@ const minutesLeft = computed(() => {
       </div>
       <UButton
         v-if="game.isMultiplierActive"
-        color="red"
+        color="error"
         variant="soft"
         icon="i-lucide-stop-circle"
         @click="admin.clearMultiplier"

@@ -53,8 +53,8 @@ const filtered = computed(() =>
               {{ p.points.toLocaleString() }}
             </td>
             <td class="px-4 py-2 text-right space-x-1">
-              <UButton size="2xs" color="primary" variant="soft" @click="adjustPoints(p.id, 10)">+10</UButton>
-              <UButton size="2xs" color="red"     variant="soft" @click="adjustPoints(p.id, -10)">-10</UButton>
+              <UButton size="xs" color="primary" variant="soft" @click="adjustPoints(p.id, 10)">+10</UButton>
+              <UButton size="xs" color="error"   variant="soft" @click="adjustPoints(p.id, -10)">-10</UButton>
             </td>
           </tr>
         </tbody>

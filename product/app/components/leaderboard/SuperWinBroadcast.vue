@@ -5,8 +5,7 @@ defineEmits<{ (e: 'dismiss'): void }>()
 
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-8 animate-fade-in cursor-pointer"
-    style="background: radial-gradient(circle at center, rgba(66,184,131,0.55), rgba(10,15,25,0.95));"
+    class="fixed inset-0 z-50 flex items-center justify-center p-8 animate-fade-in cursor-pointer gradient-super"
     @click="$emit('dismiss')"
   >
     <div class="text-center max-w-4xl">

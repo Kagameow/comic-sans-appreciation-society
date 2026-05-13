@@ -20,11 +20,11 @@ const { user, isSignedIn, isAdmin, signOut } = useAuthSession()
         <UIcon :name="isAdmin ? 'i-lucide-shield-check' : 'i-lucide-user'" class="h-3.5 w-3.5" />
         <span class="hidden sm:inline truncate max-w-[160px]">{{ user!.email }}</span>
       </button>
-      <template #panel>
+      <template #content>
         <div class="p-3 w-56 space-y-2">
           <div class="text-xs text-slate-400 ticker-mono truncate">{{ user!.email }}</div>
           <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
-          <UButton block size="sm" color="red" variant="soft" icon="i-lucide-log-out" @click="signOut">
+          <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
             Sign out
           </UButton>
         </div>

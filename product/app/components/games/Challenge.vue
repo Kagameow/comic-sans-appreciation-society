@@ -17,23 +17,26 @@ const code = ref('')
     </h2>
     <p class="text-xl text-slate-400 mb-8">…and beat them at {{ activity }}!</p>
 
-    <label class="text-xs uppercase tracking-wider text-slate-400">Referee Confirmation Code</label>
-    <div class="flex gap-2 mt-2">
-      <input
-        v-model="code"
-        placeholder="ADMIN-XXXX"
-        class="flex-1 px-4 py-3 rounded-lg bg-slate-900 border border-white/10 focus:border-emerald-400 focus:outline-none ticker-mono uppercase"
-        @input="code = code.toUpperCase()"
-      />
-      <UButton
-        size="lg"
-        color="primary"
-        :disabled="code.length < 4"
-        @click="emit('resolve', 150)"
-      >
-        Confirm Win
-      </UButton>
-    </div>
+    <UFormField label="Referee Confirmation Code" class="mt-2">
+      <div class="flex gap-2">
+        <UInput
+          v-model="code"
+          placeholder="ADMIN-XXXX"
+          size="lg"
+          class="flex-1"
+          :ui="{ base: 'ticker-mono uppercase' }"
+          @input="code = code.toUpperCase()"
+        />
+        <UButton
+          size="lg"
+          color="primary"
+          :disabled="code.length < 4"
+          @click="emit('resolve', 150)"
+        >
+          Confirm Win
+        </UButton>
+      </div>
+    </UFormField>
     <p class="text-xs text-slate-500 mt-3">
       POC: any 4+ char code resolves the win. The real version checks against
       a referee-issued single-use code.

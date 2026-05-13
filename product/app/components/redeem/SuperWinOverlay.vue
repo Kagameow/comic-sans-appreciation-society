@@ -3,10 +3,7 @@ defineEmits<{ (e: 'dismiss'): void }>()
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in"
-    style="background: radial-gradient(circle at center, rgba(66,184,131,0.4), rgba(10,15,25,0.95));"
-  >
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-6 animate-fade-in gradient-super">
     <div class="text-center max-w-2xl">
       <UIcon name="i-lucide-git-merge" class="h-20 w-20 mx-auto text-emerald-300 mb-4 animate-pulse" />
       <div class="ticker-mono text-xs text-emerald-300 mb-2">git merge --master</div>

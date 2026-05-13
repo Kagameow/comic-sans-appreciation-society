@@ -30,7 +30,7 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
       />
     </div>
 
-    <RedeemMasterClueModal v-if="redeem.showClueModal.value" @close="redeem.showClueModal.value = false" />
+    <RedeemMasterClueModal v-model:open="redeem.showClueModal.value" />
     <RedeemSuperWinOverlay v-if="redeem.showSuperWin.value" @dismiss="redeem.showSuperWin.value = false" />
   </div>
 </template>

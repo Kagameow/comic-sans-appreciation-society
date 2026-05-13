@@ -55,7 +55,7 @@ watchEffect(() => {
       </div>
 
       <form class="space-y-4" @submit.prevent="signIn">
-        <UFormGroup label="Email" name="email">
+        <UFormField label="Email" name="email">
           <UInput
             v-model="email"
             type="email"
@@ -64,9 +64,9 @@ watchEffect(() => {
             required
             :disabled="loading"
           />
-        </UFormGroup>
+        </UFormField>
 
-        <UFormGroup label="Password" name="password">
+        <UFormField label="Password" name="password">
           <UInput
             v-model="password"
             type="password"
@@ -75,7 +75,7 @@ watchEffect(() => {
             required
             :disabled="loading"
           />
-        </UFormGroup>
+        </UFormField>
 
         <UButton
           block
