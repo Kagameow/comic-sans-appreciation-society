@@ -19,16 +19,9 @@ export async function currentPlayer(event: H3Event): Promise<Player | null> {
 }
 
 function displayNameForUser(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {
-  const full = user.user_metadata?.full_name
-  if (typeof full === 'string' && full.trim()) return full.trim()
-  const local = user.email?.split('@')[0]
-  if (!local) return 'Anonymous'
-  return local
-    .replace(/[._-]+/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
+  const display = user.user_metadata?.display_name
+  if (typeof display === 'string' && display.trim()) return display.trim()
+  return user.email?.trim() || 'Anonymous'
 }
 
 /**

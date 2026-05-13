@@ -52,7 +52,6 @@ const isDark = computed({
           </ClientOnly>
           <SharedMultiplierBadge />
           <SharedPlayerBadge />
-          <SharedAuthBadge />
         </div>
       </div>
     </header>
