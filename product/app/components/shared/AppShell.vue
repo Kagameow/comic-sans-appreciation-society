@@ -2,6 +2,7 @@
 const game = useGameStore()
 const { isComic, toggle: toggleFont } = useFontMode()
 const colorMode = useColorMode()
+const navOpen = ref(false)
 
 const isDark = computed({
   get: () => colorMode.value === 'dark',
@@ -13,7 +14,18 @@ const isDark = computed({
   <div :class="['min-h-screen', game.isMultiplierActive ? 'multiplier-glow' : '']">
     <header class="border-b border-white/10 bg-white/5 backdrop-blur sticky top-0 z-40">
       <div class="container mx-auto max-w-6xl px-3 sm:px-6 flex h-16 items-center justify-between gap-2 sm:gap-6">
-        <SharedAppLogo />
+        <div class="flex items-center gap-2 min-w-0">
+          <UButton
+            class="md:hidden"
+            variant="ghost"
+            color="neutral"
+            size="sm"
+            icon="i-lucide-menu"
+            aria-label="Open menu"
+            @click="navOpen = true"
+          />
+          <SharedAppLogo />
+        </div>
         <SharedAppNav />
         <div class="flex items-center gap-1.5 sm:gap-3">
           <UButton
@@ -44,6 +56,12 @@ const isDark = computed({
         </div>
       </div>
     </header>
+
+    <USlideover v-model:open="navOpen" side="left" title="Menu">
+      <template #body>
+        <SharedAppNav variant="stacked" @navigate="navOpen = false" />
+      </template>
+    </USlideover>
 
     <main>
       <slot />
