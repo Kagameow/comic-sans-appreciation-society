@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useGameStore } from '~/stores/game'
-
 const game = useGameStore()
 const route = useRoute()
 const config = useRuntimeConfig()

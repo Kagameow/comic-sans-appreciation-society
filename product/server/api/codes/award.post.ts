@@ -1,4 +1,3 @@
-import { useRepo } from '~/server/utils/repo'
 
 /** Called by a minigame component once the player resolves it. */
 export default defineEventHandler(async (event) => {

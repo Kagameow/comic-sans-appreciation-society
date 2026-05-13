@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useGameStore } from '~/stores/game'
-import type { Code } from '~/server/utils/repo'
+import type { Code } from '#shared/types/game'
 
 const game = useGameStore()
 await useAsyncData('state', () => game.refresh())
@@ -49,7 +48,7 @@ async function pickSuper(code: string) {
 </script>
 
 <template>
-  <AppShell>
+  <div>
     <div class="container mx-auto max-w-6xl px-6 py-8 space-y-6">
       <div>
         <div class="text-xs uppercase tracking-widest text-emerald-300 mb-1">Architect View</div>
@@ -198,7 +197,7 @@ async function pickSuper(code: string) {
                   <USwitch
                     :model-value="c.isSuperCode"
                     color="primary"
-                    @update:model-value="(v) => v && pickSuper(c.code)"
+                    @update:model-value="(v: boolean) => v && pickSuper(c.code)"
                   />
                 </td>
               </tr>
@@ -207,5 +206,5 @@ async function pickSuper(code: string) {
         </div>
       </section>
     </div>
-  </AppShell>
+  </div>
 </template>

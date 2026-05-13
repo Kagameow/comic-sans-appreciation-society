@@ -1,4 +1,3 @@
-import { useRepo } from '~/server/utils/repo'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ code?: string; playerName?: string }>(event)

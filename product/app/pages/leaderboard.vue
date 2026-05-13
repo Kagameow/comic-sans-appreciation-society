@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import { useGameStore } from '~/stores/game'
-import { useConfetti } from '~/composables/useConfetti'
-
 const game = useGameStore()
 const config = useRuntimeConfig()
 const myName = computed(() => config.public.currentPlayerName)
-const { superBurst } = useConfetti()
 
 await useAsyncData('state', () => game.refresh())
 onMounted(() => game.startPolling(2000))
@@ -20,7 +16,7 @@ watch(() => game.sortedPlayers, (next) => {
   // Detect rank change → highlight whichever player just moved up.
   for (let i = 0; i < order.length; i++) {
     if (order[i] !== prevOrder[i] && prevOrder.length > 0) {
-      bumpedId.value = order[i]
+      bumpedId.value = order[i] ?? null
       setTimeout(() => { bumpedId.value = null }, 900)
       break
     }
@@ -30,14 +26,14 @@ watch(() => game.sortedPlayers, (next) => {
 
 watch(() => game.superWinner, (winner) => {
   if (!winner) return
-  superBurst()
-  const interval = setInterval(superBurst, 600)
+  confettiSuperBurst()
+  const interval = setInterval(confettiSuperBurst, 600)
   setTimeout(() => clearInterval(interval), 4000)
 })
 </script>
 
 <template>
-  <AppShell>
+  <div>
     <div class="container mx-auto max-w-5xl px-6 py-8">
       <div class="flex items-baseline justify-between mb-6">
         <div>
@@ -107,5 +103,5 @@ watch(() => game.superWinner, (winner) => {
         <p class="text-xs text-slate-500 mt-8 ticker-mono opacity-60">click anywhere to dismiss</p>
       </div>
     </div>
-  </AppShell>
+  </div>
 </template>

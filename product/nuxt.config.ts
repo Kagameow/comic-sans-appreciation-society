@@ -1,5 +1,6 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
+  future: { compatibilityVersion: 4 },
   devtools: { enabled: true },
 
   // NOTE: `@nuxtjs/supabase` is intentionally NOT registered yet — it fails to
@@ -12,10 +13,6 @@ export default defineNuxtConfig({
   ],
 
   css: ['~/assets/css/main.css'],
-
-  ui: {
-    icons: ['lucide'],
-  },
 
   colorMode: {
     preference: 'dark',

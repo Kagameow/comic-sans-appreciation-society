@@ -1,4 +1,3 @@
-import { useRepo } from '~/server/utils/repo'
 
 export default defineEventHandler((event) => {
   const repo = useRepo()

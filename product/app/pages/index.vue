@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { useGameStore, SUPER_CLUE, TOTAL_GEMS } from '~/stores/game'
-import { useConfetti } from '~/composables/useConfetti'
+import { SUPER_CLUE, TOTAL_GEMS } from '#shared/constants/game'
 
 const game = useGameStore()
 const config = useRuntimeConfig()
 const playerName = computed(() => config.public.currentPlayerName)
-const { burst, superBurst } = useConfetti()
 
 await useAsyncData('state', () => game.refresh())
 onMounted(() => game.startPolling())
@@ -47,7 +45,7 @@ const clueUnlocked = computed(() => game.clueUnlocked)
 
 function flashAward(pts: number, mult: number) {
   flash.value = { pts, mult }
-  burst()
+  confettiBurst()
   setTimeout(() => { flash.value = null }, 2500)
 }
 
@@ -74,7 +72,7 @@ async function submit() {
       return
     }
     showSuperWin.value = true
-    superBurst()
+    confettiSuperBurst()
     return
   }
   if (res.kind === 'point' || res.kind === 'victory') {
@@ -106,7 +104,7 @@ async function resolveMinigame(points: number) {
 </script>
 
 <template>
-  <AppShell>
+  <div>
     <div class="container mx-auto max-w-3xl px-6 py-12">
       <!-- INPUT MODE -->
       <template v-if="mode === 'input'">
@@ -122,7 +120,7 @@ async function resolveMinigame(points: number) {
           </p>
         </div>
 
-        <GemsTracker :filled="Math.max(myGems, myVictories)" />
+        <RedeemGemsTracker :filled="Math.max(myGems, myVictories)" />
 
         <button
           v-if="clueUnlocked && !game.superWinner"
@@ -234,5 +232,5 @@ async function resolveMinigame(points: number) {
         <UButton size="lg" color="primary" @click="showSuperWin = false">Continue</UButton>
       </div>
     </div>
-  </AppShell>
+  </div>
 </template>

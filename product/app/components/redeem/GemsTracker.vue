@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TOTAL_GEMS } from '~/stores/game'
+import { TOTAL_GEMS } from '#shared/constants/game'
 
 const props = defineProps<{ filled: number; label?: string }>()
 const lit = (i: number) => i < props.filled

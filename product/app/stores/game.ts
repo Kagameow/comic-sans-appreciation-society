@@ -1,26 +1,6 @@
 import { defineStore } from 'pinia'
-import type { Player } from '~/server/utils/repo'
-
-export const TOTAL_GEMS = 5
-export const SUPER_CLUE =
-  'Where the build artifacts rest and the green checkmark hums — seek the kiosk that never sleeps.'
-
-export type ConfigSnapshot = {
-  multiplier: number
-  multiplierEndsAt: number | null
-  superCode: string | null
-  superWinner: string | null
-  superWonAt: number | null
-}
-
-export type SuperEvent = { name: string; at: number } | null
-
-type StateSnapshot = {
-  config: ConfigSnapshot
-  players: Player[]
-  me: Player | null
-  superWinner: SuperEvent
-}
+import { TOTAL_GEMS, TOTAL_VICTORIES } from '#shared/constants/game'
+import type { Player, ConfigSnapshot, SuperEvent, StateSnapshot } from '#shared/types/game'
 
 export const useGameStore = defineStore('game', {
   state: () => ({
@@ -50,7 +30,7 @@ export const useGameStore = defineStore('game', {
     clueUnlocked(state): boolean {
       const me = state.me
       if (!me) return false
-      return me.victories >= 5 || me.gems >= TOTAL_GEMS
+      return me.victories >= TOTAL_VICTORIES || me.gems >= TOTAL_GEMS
     },
     sortedPlayers(state): Player[] {
       return [...state.players].sort((a, b) => b.points - a.points)
@@ -72,10 +52,6 @@ export const useGameStore = defineStore('game', {
       this.apply(snap)
     },
 
-    /**
-     * POC: poll every 3s instead of Supabase realtime. Swap to a realtime
-     * channel subscription once @nuxtjs/supabase is wired.
-     */
     startPolling(intervalMs = 3000) {
       if (this.pollHandle) return
       this.pollHandle = setInterval(() => { this.refresh().catch(() => {}) }, intervalMs)

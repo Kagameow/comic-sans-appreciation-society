@@ -12,8 +12,8 @@ const active = computed(() => {
   const m: boolean[][] = Array.from({ length: SIZE }, () => Array(SIZE).fill(false))
   for (const a of ANSWERS) {
     for (let i = 0; i < a.word.length; i++) {
-      if (a.dir === 'across') m[a.row][a.col + i] = true
-      else m[a.row + i][a.col] = true
+      if (a.dir === 'across') m[a.row]![a.col + i] = true
+      else m[a.row + i]![a.col] = true
     }
   }
   return m
@@ -22,12 +22,12 @@ const active = computed(() => {
 const grid = ref<string[][]>(Array.from({ length: SIZE }, () => Array(SIZE).fill('')))
 
 const filled = computed(() =>
-  grid.value.every((row, r) => row.every((c, ci) => !active.value[r][ci] || c.length > 0)),
+  grid.value.every((row, r) => row.every((c, ci) => !active.value[r]![ci] || c.length > 0)),
 )
 
 function update(r: number, c: number, v: string) {
   const ch = v.toUpperCase().slice(-1)
-  grid.value[r][c] = ch
+  grid.value[r]![c] = ch
 }
 </script>
 
@@ -39,7 +39,7 @@ function update(r: number, c: number, v: string) {
         <template v-for="(row, r) in grid" :key="r">
           <template v-for="(cell, c) in row" :key="`${r}-${c}`">
             <input
-              v-if="active[r][c]"
+              v-if="active[r]?.[c]"
               :value="cell"
               maxlength="1"
               class="aspect-square w-full text-center font-bold text-lg uppercase rounded-md bg-slate-900 border border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 ticker-mono"
