@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `product/` is the Nuxt 4-conventions port of the Lovable prototype at `../prototype`. POC for an office-wide Vue 3 migration-day game (code hunting, minigames, victories, a hidden Super Code race). Client code lives under `app/`, server under `server/`, cross-cutting types/constants under `shared/` (via the `#shared` alias).
 
+## Workflow rules
+
+- **Every change ships on its own branch + PR.** No commits land on `main` directly. Spin up a feature branch (`git switch -c <topic>`), push, open a PR, and merge from there.
+- **Commit often, commit early.** Push WIP onto the PR branch as soon as something compiles — small commits, descriptive messages. The PR is the unit of review, not the commit.
+- **`main` is protected by convention.** If you catch yourself about to `git commit` on `main`, stop and create a branch first. The only commits that should ever be reachable from `main` directly are the ones already on the remote.
+
 ## Commands
 
 ```bash
