@@ -16,7 +16,7 @@ async function selectSuper(code: string) {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-xl font-semibold">Code Registry</h2>
@@ -26,8 +26,8 @@ async function selectSuper(code: string) {
         </p>
       </div>
     </div>
-    <div class="overflow-hidden rounded-lg border border-white/10">
-      <table class="w-full text-sm">
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-sm min-w-[480px]">
         <thead class="bg-white/[0.04] text-slate-400 text-xs uppercase">
           <tr>
             <th class="text-left px-4 py-2">Code</th>

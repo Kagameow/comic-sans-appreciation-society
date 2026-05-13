@@ -12,10 +12,10 @@ const isDark = computed({
 <template>
   <div :class="['min-h-screen', game.isMultiplierActive ? 'multiplier-glow' : '']">
     <header class="border-b border-white/10 bg-white/5 backdrop-blur sticky top-0 z-40">
-      <div class="container mx-auto max-w-6xl px-6 flex h-16 items-center justify-between gap-6">
+      <div class="container mx-auto max-w-6xl px-3 sm:px-6 flex h-16 items-center justify-between gap-2 sm:gap-6">
         <SharedAppLogo />
         <SharedAppNav />
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5 sm:gap-3">
           <UButton
             variant="ghost"
             color="neutral"

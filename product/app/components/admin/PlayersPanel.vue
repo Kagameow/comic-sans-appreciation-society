@@ -9,18 +9,18 @@ const filtered = computed(() =>
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
-    <div class="flex items-center justify-between mb-4">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
       <h2 class="text-xl font-semibold">Player Management</h2>
       <UInput
         v-model="search"
         icon="i-lucide-search"
         placeholder="Search players…"
-        class="w-64"
+        class="w-full sm:w-64"
       />
     </div>
-    <div class="overflow-hidden rounded-lg border border-white/10">
-      <table class="w-full text-sm">
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-sm min-w-[560px]">
         <thead class="bg-white/[0.04] text-slate-400 text-xs uppercase">
           <tr>
             <th class="text-left px-4 py-2">Player</th>

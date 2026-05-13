@@ -9,7 +9,7 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
 
 <template>
   <div>
-    <div class="container mx-auto max-w-3xl px-6 py-12">
+    <div class="container mx-auto max-w-3xl px-3 sm:px-6 py-6 sm:py-12">
       <RedeemSignInGate v-if="!isSignedIn" />
 
       <template v-else-if="redeem.mode.value === 'input'">

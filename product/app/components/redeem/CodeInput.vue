@@ -21,19 +21,21 @@ async function submit() {
 <template>
   <div class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-card relative overflow-hidden">
     <div v-if="lockout.locked.value" class="absolute inset-0 animate-shimmer pointer-events-none" />
-    <div class="flex gap-3">
+    <div class="flex flex-col sm:flex-row gap-3">
       <input
         ref="inputEl"
         v-model="code"
         :disabled="lockout.locked.value"
         autofocus
         :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
-        class="flex-1 bg-slate-900 border border-white/10 rounded-xl px-5 py-5 text-2xl ticker-mono tracking-wider focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
+        class="flex-1 min-w-0 bg-slate-900 border border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
         @input="code = code.toUpperCase()"
         @keydown.enter="submit"
       />
       <UButton
-        size="xl"
+        size="lg"
+        block
+        class="sm:!w-auto sm:!block-auto"
         color="primary"
         :disabled="lockout.locked.value || !code"
         @click="submit"
