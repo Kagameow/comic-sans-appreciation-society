@@ -1,4 +1,15 @@
 /* Vue-green hackathon theme, ported from prototype/src/index.css */
+
+:root {
+  --font-body: 'Comic Neue', cursive, sans-serif;
+  --font-mono: 'Comic Mono', 'Comic Neue', monospace;
+}
+
+html.font-normal {
+  --font-body: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
 :root {
   --background: 215 35% 8%;
   --foreground: 210 40% 98%;
@@ -21,6 +32,7 @@
 html, body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: var(--font-body);
   background-image:
     radial-gradient(circle at 20% 0%, hsl(153 47% 49% / 0.08), transparent 50%),
     radial-gradient(circle at 80% 100%, hsl(210 29% 29% / 0.15), transparent 50%);
@@ -30,7 +42,7 @@ html, body {
 }
 
 .ticker-mono {
-  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

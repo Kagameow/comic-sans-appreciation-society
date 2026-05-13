@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const game = useGameStore()
+const { isComic, toggle: toggleFont } = useFontMode()
 </script>
 
 <template>
@@ -9,6 +10,14 @@ const game = useGameStore()
         <SharedAppLogo />
         <SharedAppNav />
         <div class="flex items-center gap-3">
+          <UButton
+            variant="ghost"
+            size="sm"
+            :title="isComic ? 'Switch to boring font' : 'Switch to fun font'"
+            @click="toggleFont"
+          >
+            <span class="text-lg leading-none">{{ isComic ? '🎨' : '📝' }}</span>
+          </UButton>
           <SharedMultiplierBadge />
           <SharedPlayerBadge />
         </div>
