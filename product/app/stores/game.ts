@@ -15,7 +15,6 @@ export const useGameStore = defineStore('game', {
     me: null as Player | null,
     superWinner: null as SuperEvent,
     initialised: false,
-    pollHandle: null as ReturnType<typeof setInterval> | null,
   }),
 
   getters: {
@@ -50,15 +49,6 @@ export const useGameStore = defineStore('game', {
       const playerName = useRuntimeConfig().public.currentPlayerName
       const snap = await $fetch<StateSnapshot>('/api/state', { query: { player: playerName } })
       this.apply(snap)
-    },
-
-    startPolling(intervalMs = 3000) {
-      if (this.pollHandle) return
-      this.pollHandle = setInterval(() => { this.refresh().catch(() => {}) }, intervalMs)
-    },
-    stopPolling() {
-      if (this.pollHandle) clearInterval(this.pollHandle)
-      this.pollHandle = null
     },
 
     dismissSuperEvent() {

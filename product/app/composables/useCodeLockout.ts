@@ -9,22 +9,17 @@ export function useCodeLockout(maxFails = 3, lockMs = 60_000) {
   const lockRemain = ref(0)
   const locked = computed(() => lockUntil.value !== null)
 
-  let handle: ReturnType<typeof setInterval> | null = null
-  watchEffect(() => {
-    if (handle) { clearInterval(handle); handle = null }
+  const { pause, resume } = useIntervalFn(() => {
     if (!lockUntil.value) return
-    handle = setInterval(() => {
-      const ms = lockUntil.value! - Date.now()
-      if (ms <= 0) {
-        lockUntil.value = null
-        lockRemain.value = 0
-        fails.value = 0
-      } else {
-        lockRemain.value = Math.ceil(ms / 1000)
-      }
-    }, 250)
+    const ms = lockUntil.value - Date.now()
+    if (ms <= 0) reset()
+    else lockRemain.value = Math.ceil(ms / 1000)
+  }, 250, { immediate: false })
+
+  watchEffect(() => {
+    if (lockUntil.value) resume()
+    else pause()
   })
-  onUnmounted(() => { if (handle) clearInterval(handle) })
 
   function recordFail() {
     const next = fails.value + 1

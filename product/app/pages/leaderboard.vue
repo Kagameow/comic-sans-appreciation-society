@@ -5,11 +5,10 @@ const myName = computed(() => useRuntimeConfig().public.currentPlayerName)
 const sortedPlayers = computed(() => game.sortedPlayers)
 const bumpedId = useRankBumpHighlight(sortedPlayers)
 
-watch(() => game.superWinner, (winner) => {
-  if (!winner) return
+whenever(() => game.superWinner, () => {
   confettiSuperBurst()
-  const interval = setInterval(confettiSuperBurst, 600)
-  setTimeout(() => clearInterval(interval), 4000)
+  const { pause } = useIntervalFn(confettiSuperBurst, 600)
+  useTimeoutFn(pause, 4000)
 })
 </script>
 

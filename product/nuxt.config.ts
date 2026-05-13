@@ -7,6 +7,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@pinia/nuxt',
     '@nuxtjs/supabase',
+    '@vueuse/nuxt',
   ],
 
   css: ['~/assets/css/main.css'],

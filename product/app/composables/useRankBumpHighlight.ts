@@ -6,7 +6,7 @@ import type { Player } from '#shared/types/game'
  * class to the row whose id matches `bumpedId`.
  */
 export function useRankBumpHighlight(players: Ref<Player[]>, durationMs = 900) {
-  const bumpedId = ref<string | null>(null)
+  const bumpedId = refAutoReset<string | null>(null, durationMs)
   let prevOrder: string[] = []
 
   watch(players, (next) => {
@@ -14,7 +14,6 @@ export function useRankBumpHighlight(players: Ref<Player[]>, durationMs = 900) {
     for (let i = 0; i < order.length; i++) {
       if (prevOrder.length > 0 && order[i] !== prevOrder[i]) {
         bumpedId.value = order[i] ?? null
-        setTimeout(() => { bumpedId.value = null }, durationMs)
         break
       }
     }

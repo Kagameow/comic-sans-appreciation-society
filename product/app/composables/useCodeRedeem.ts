@@ -24,14 +24,13 @@ export function useCodeRedeem() {
 
   const mode = ref<Mode>('input')
   const activeMinigame = ref<{ codeRef: string } | null>(null)
-  const flash = ref<Flash | null>(null)
+  const flash = refAutoReset<Flash | null>(null, 2500)
   const showClueModal = ref(false)
   const showSuperWin = ref(false)
 
   function flashAward(pts: number, mult: number) {
     flash.value = { pts, mult }
     confettiBurst()
-    setTimeout(() => { flash.value = null }, 2500)
   }
 
   function maybeOpenClue(res: { clueUnlocked?: boolean }) {
