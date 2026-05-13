@@ -46,8 +46,7 @@ export const useGameStore = defineStore('game', {
     },
 
     async refresh() {
-      const playerName = useRuntimeConfig().public.currentPlayerName
-      const snap = await $fetch<StateSnapshot>('/api/state', { query: { player: playerName } })
+      const snap = await $fetch<StateSnapshot>('/api/state')
       this.apply(snap)
     },
 

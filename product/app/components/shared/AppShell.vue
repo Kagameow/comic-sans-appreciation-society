@@ -20,6 +20,7 @@ const { isComic, toggle: toggleFont } = useFontMode()
           </UButton>
           <SharedMultiplierBadge />
           <SharedPlayerBadge />
+          <SharedAuthBadge />
         </div>
       </div>
     </header>

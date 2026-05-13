@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const game = await useGameSync(2000)
-const myName = computed(() => useRuntimeConfig().public.currentPlayerName)
+const myId = computed(() => game.me?.id ?? null)
 
 const sortedPlayers = computed(() => game.sortedPlayers)
 const bumpedId = useRankBumpHighlight(sortedPlayers)
@@ -22,7 +22,7 @@ whenever(() => game.superWinner, () => {
           :key="p.id"
           :player="p"
           :rank="idx"
-          :is-me="p.name === myName"
+          :is-me="p.id === myId"
           :bumped="bumpedId === p.id"
         />
       </div>

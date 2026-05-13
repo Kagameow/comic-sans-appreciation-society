@@ -18,16 +18,22 @@ export default defineNuxtConfig({
   },
 
   supabase: {
-    // POC: the app reads its game state from the in-memory repo. Supabase is
-    // wired so that route middleware + serverSupabaseClient/User are available
-    // for the auth swap — but redirect is disabled so anonymous play still works.
-    redirect: false,
+    // Game pages stay anonymous (Code Check + Leaderboard). Only /admin is
+    // gated — the module auto-redirects unauthed visitors there to /login
+    // and stashes the original destination in a cookie for /confirm to read.
+    redirectOptions: {
+      login: '/login',
+      callback: '/confirm',
+      include: ['/admin(/*)?'],
+      saveRedirectToCookie: true,
+    },
   },
 
   runtimeConfig: {
-    adminEmails: process.env.ADMIN_EMAILS ?? '',
     public: {
-      currentPlayerName: process.env.NUXT_PUBLIC_CURRENT_PLAYER_NAME ?? 'Daan Nagtegaal',
+      // Whitelist surfaced to the client so the admin route middleware can
+      // gate before any API call. Emails are not secrets.
+      adminEmails: process.env.ADMIN_EMAILS ?? '',
     },
   },
 

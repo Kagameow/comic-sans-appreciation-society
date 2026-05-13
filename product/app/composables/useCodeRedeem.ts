@@ -19,7 +19,6 @@ type AwardResponse = {
  */
 export function useCodeRedeem() {
   const game = useGameStore()
-  const playerName = computed(() => useRuntimeConfig().public.currentPlayerName)
   const lockout = useCodeLockout()
 
   const mode = ref<Mode>('input')
@@ -43,7 +42,7 @@ export function useCodeRedeem() {
 
     const res = await $fetch<RedeemResponse>('/api/codes/redeem', {
       method: 'POST',
-      body: { code, playerName: playerName.value },
+      body: { code },
     }).catch(() => ({ kind: 'invalid' as const }))
 
     await game.refresh()
@@ -77,7 +76,7 @@ export function useCodeRedeem() {
     const codeRef = activeMinigame.value?.codeRef ?? 'minigame'
     const res = await $fetch<AwardResponse>('/api/codes/award', {
       method: 'POST',
-      body: { playerName: playerName.value, codeRef, base: points },
+      body: { codeRef, base: points },
     })
     await game.refresh()
     mode.value = 'input'

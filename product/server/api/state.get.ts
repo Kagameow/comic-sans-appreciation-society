@@ -1,12 +1,9 @@
-
-export default defineEventHandler((event) => {
+export default defineEventHandler(async (event) => {
   const repo = useRepo()
-  const { player: playerName } = getQuery(event) as { player?: string }
-  const players = repo.listPlayers()
-  const me = playerName ? players.find(p => p.name === playerName) ?? null : null
+  const me = await currentPlayer(event)
   return {
     config: repo.getConfig(),
-    players,
+    players: repo.listPlayers(),
     me,
     superWinner: repo.superWinner(),
   }

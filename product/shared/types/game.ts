@@ -6,6 +6,10 @@ export type Player = {
   victories: number
   gems: number
   latest: string
+  /** Linked Supabase auth user id, if this player has signed in. Seed players have none. */
+  userId?: string
+  /** Lowercased Google email. Set on first sign-in; used as the link key. */
+  email?: string
 }
 
 export type CodeType = 'point' | 'trivia' | 'crossword' | 'challenge' | 'victory' | 'super'

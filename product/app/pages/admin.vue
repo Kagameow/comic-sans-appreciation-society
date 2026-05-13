@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: 'admin' })
+
 await useGameSync()
 </script>
 

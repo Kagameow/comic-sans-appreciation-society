@@ -1,16 +1,10 @@
-
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ code?: string; playerName?: string }>(event)
+  const body = await readBody<{ code?: string }>(event)
   const code = String(body?.code ?? '').trim().toUpperCase()
-  const playerName = String(body?.playerName ?? '').trim()
-  if (!code || !playerName) {
-    throw createError({ statusCode: 400, message: 'code and playerName required' })
-  }
+  if (!code) throw createError({ statusCode: 400, message: 'code required' })
 
+  const player = await requirePlayer(event)
   const repo = useRepo()
-  const player = repo.getPlayerByName(playerName)
-  if (!player) throw createError({ statusCode: 404, message: 'unknown player' })
-
   const row = repo.getCode(code)
   if (!row) return { kind: 'invalid' as const }
 

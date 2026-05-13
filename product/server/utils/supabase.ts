@@ -2,18 +2,15 @@ import { serverSupabaseUser } from '#supabase/server'
 import type { H3Event } from 'h3'
 
 /**
- * Returns true if the request comes from a Google-authenticated user whose
- * email is in ADMIN_EMAILS.
+ * Returns true if the request comes from an authenticated user whose email
+ * is in ADMIN_EMAILS. Defense-in-depth complement to the client-side
+ * `admin` middleware — the middleware is UX, this is the gate.
  *
- * POC fallback: if no user is signed in *and* no ADMIN_EMAILS list is
- * configured, allow the request — keeps the demo running without auth. The
- * moment ADMIN_EMAILS is set, this becomes a real gate.
+ * Never use Supabase `user_metadata` for authorization: it's user-editable.
+ * We rely on `user.email`, which Supabase asserts from the OAuth provider.
  */
 export async function isAdminRequest(event: H3Event): Promise<boolean> {
-  const list = adminEmails()
   const user = await serverSupabaseUser(event).catch(() => null)
-
-  if (list.length === 0 && !user) return true
   return isAdminEmail(user?.email)
 }
 
@@ -23,7 +20,7 @@ export function isAdminEmail(email: string | undefined | null): boolean {
 }
 
 function adminEmails(): string[] {
-  return String(useRuntimeConfig().adminEmails ?? '')
+  return String(useRuntimeConfig().public.adminEmails ?? '')
     .split(',')
     .map(s => s.trim().toLowerCase())
     .filter(Boolean)

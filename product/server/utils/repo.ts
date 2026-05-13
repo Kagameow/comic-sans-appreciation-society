@@ -87,6 +87,43 @@ export function useRepo() {
     getPlayerById(id: string): Player | null {
       return store.players.find(p => p.id === id) ?? null
     },
+    getPlayerByUserId(userId: string): Player | null {
+      return store.players.find(p => p.userId === userId) ?? null
+    },
+    getPlayerByEmail(email: string): Player | null {
+      const e = email.toLowerCase()
+      return store.players.find(p => p.email === e) ?? null
+    },
+
+    /**
+     * Resolves a Supabase user to their player row. Lookup order:
+     *   1. existing player linked by userId (returning user)
+     *   2. existing player matched by email (claim a seed/demo row)
+     *   3. create a fresh player from the user's profile (first sign-in)
+     */
+    ensurePlayerForUser(user: { id: string; email?: string | null; name?: string | null; avatar?: string | null }): Player {
+      const email = user.email?.toLowerCase() ?? ''
+      let p = store.players.find(x => x.userId === user.id)
+      if (!p && email) p = store.players.find(x => x.email === email)
+      if (p) {
+        if (!p.userId) p.userId = user.id
+        if (!p.email && email) p.email = email
+        return p
+      }
+      const fresh: Player = {
+        id: `u${store.players.length + 1}-${user.id.slice(0, 6)}`,
+        userId: user.id,
+        email: email || undefined,
+        name: user.name || (email ? email.split('@')[0]! : 'Anonymous'),
+        avatar: user.avatar || '🦊',
+        points: 0,
+        victories: 0,
+        gems: 0,
+        latest: 'Joined the migration',
+      }
+      store.players.push(fresh)
+      return fresh
+    },
     getCode(code: string): Code | null {
       return store.codes.find(c => c.code === code) ?? null
     },

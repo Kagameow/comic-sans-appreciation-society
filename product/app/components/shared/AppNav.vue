@@ -1,11 +1,12 @@
 <script setup lang="ts">
 const route = useRoute()
+const { isAdmin } = useAuthSession()
 
-const items = [
-  { to: '/',            label: 'Code Check',  icon: 'i-lucide-terminal' },
-  { to: '/leaderboard', label: 'Leaderboard', icon: 'i-lucide-trophy' },
-  { to: '/admin',       label: 'Admin',       icon: 'i-lucide-shield' },
-]
+const items = computed(() => [
+  { to: '/',            label: 'Code Check',  icon: 'i-lucide-terminal', show: true },
+  { to: '/leaderboard', label: 'Leaderboard', icon: 'i-lucide-trophy',   show: true },
+  { to: '/admin',       label: 'Admin',       icon: 'i-lucide-shield',   show: isAdmin.value },
+].filter(n => n.show))
 </script>
 
 <template>

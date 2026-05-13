@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const game = await useGameSync()
+const { isSignedIn } = useAuthSession()
 const redeem = useCodeRedeem()
 
 const filledGems = computed(() => Math.max(game.me?.gems ?? 0, game.me?.victories ?? 0))
@@ -9,7 +10,9 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
 <template>
   <div>
     <div class="container mx-auto max-w-3xl px-6 py-12">
-      <template v-if="redeem.mode.value === 'input'">
+      <RedeemSignInGate v-if="!isSignedIn" />
+
+      <template v-else-if="redeem.mode.value === 'input'">
         <RedeemHeroBanner />
         <RedeemGemsTracker :filled="filledGems" />
 
