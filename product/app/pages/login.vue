@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import * as v from 'valibot'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 definePageMeta({ layout: false })
 
 const user = useSupabaseUser()
@@ -7,24 +10,33 @@ const redirect = useSupabaseCookieRedirect()
 const route = useRoute()
 
 const denied = computed(() => route.query.denied === 'admin')
-const email = ref('')
-const password = ref('')
+
+const schema = v.object({
+  email: v.pipe(v.string(), v.trim(), v.email('Enter a valid email')),
+  password: v.pipe(v.string(), v.minLength(6, 'Must be at least 6 characters')),
+})
+type Schema = v.InferOutput<typeof schema>
+
+const state = reactive<Partial<Schema>>({
+  email: '',
+  password: '',
+})
+
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-async function signIn() {
+async function onSubmit(event: FormSubmitEvent<Schema>) {
   if (loading.value) return
   loading.value = true
   error.value = null
   const { error: err } = await supabase.auth.signInWithPassword({
-    email: email.value.trim(),
-    password: password.value,
+    email: event.data.email,
+    password: event.data.password,
   })
   if (err) {
     error.value = err.message
     loading.value = false
   }
-  // On success, the watchEffect below handles navigation once the session lands.
 }
 
 watchEffect(() => {
@@ -54,25 +66,25 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <form class="space-y-4" @submit.prevent="signIn">
+      <UForm :schema="schema" :state="state" class="space-y-4" @submit="onSubmit">
         <UFormField label="Email" name="email">
           <UInput
-            v-model="email"
+            v-model="state.email"
             type="email"
             autocomplete="email"
             placeholder="you@visma.com"
-            required
+            class="w-full"
             :disabled="loading"
           />
         </UFormField>
 
         <UFormField label="Password" name="password">
           <UInput
-            v-model="password"
+            v-model="state.password"
             type="password"
             autocomplete="current-password"
             placeholder="••••••••"
-            required
+            class="w-full"
             :disabled="loading"
           />
         </UFormField>
@@ -87,7 +99,7 @@ watchEffect(() => {
         >
           Sign in
         </UButton>
-      </form>
+      </UForm>
 
       <div v-if="error" class="mt-4 text-sm text-rose-400 ticker-mono text-center">
         {{ error }}

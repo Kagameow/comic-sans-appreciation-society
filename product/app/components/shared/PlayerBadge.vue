@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import * as v from 'valibot'
+import type { FormSubmitEvent } from '@nuxt/ui'
+
 const { user, isSignedIn, isAdmin, signOut } = useAuthSession()
 const supabase = useSupabaseClient()
 const game = useGameStore()
@@ -16,22 +19,32 @@ const displayName = computed(() => {
   return user.value?.email ?? ''
 })
 
-const nameDraft = ref('')
+const schema = v.object({
+  display_name: v.pipe(
+    v.string(),
+    v.trim(),
+    v.minLength(2, 'At least 2 characters'),
+    v.maxLength(40, 'Max 40 characters'),
+  ),
+})
+type Schema = v.InferOutput<typeof schema>
+
+const state = reactive<Partial<Schema>>({ display_name: '' })
 const saving = ref(false)
 const saveError = ref<string | null>(null)
 
-watch(currentDisplay, v => { nameDraft.value = v }, { immediate: true })
+watch(currentDisplay, v => { state.display_name = v }, { immediate: true })
 
 const nameDirty = computed(() =>
-  nameDraft.value.trim().length > 0 && nameDraft.value.trim() !== currentDisplay.value,
+  !!state.display_name && state.display_name.trim() !== currentDisplay.value,
 )
 
-async function saveName() {
-  if (!nameDirty.value || saving.value) return
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  if (saving.value) return
   saving.value = true
   saveError.value = null
   const { error } = await supabase.auth.updateUser({
-    data: { display_name: nameDraft.value.trim() },
+    data: { display_name: event.data.display_name },
   })
   saving.value = false
   if (error) {
@@ -78,26 +91,27 @@ async function saveName() {
     <template #content>
       <div class="p-3 w-72 space-y-3">
         <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
-        <UFormField label="Display name">
-          <div class="flex gap-2">
-            <UInput
-              v-model="nameDraft"
-              size="sm"
-              class="flex-1"
-              placeholder="Your name"
-              :disabled="saving"
-              @keydown.enter="saveName"
-            />
-            <UButton
-              size="sm"
-              :loading="saving"
-              :disabled="!nameDirty"
-              @click="saveName"
-            >
-              Save
-            </UButton>
-          </div>
-        </UFormField>
+        <UForm :schema="schema" :state="state" @submit="onSubmit">
+          <UFormField label="Display name" name="display_name">
+            <div class="flex gap-2">
+              <UInput
+                v-model="state.display_name"
+                size="sm"
+                class="flex-1"
+                placeholder="Your name"
+                :disabled="saving"
+              />
+              <UButton
+                type="submit"
+                size="sm"
+                :loading="saving"
+                :disabled="!nameDirty"
+              >
+                Save
+              </UButton>
+            </div>
+          </UFormField>
+        </UForm>
         <p v-if="saveError" class="text-xs text-rose-400 ticker-mono">{{ saveError }}</p>
         <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
         <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
