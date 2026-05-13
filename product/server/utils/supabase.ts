@@ -1,31 +1,30 @@
-/**
- * Placeholder for the Supabase-backed implementation.
- *
- * When real creds are wired:
- *  1. Re-enable `@nuxtjs/supabase` in nuxt.config.ts (already configured).
- *  2. Replace `server/utils/repo.ts` with a Supabase-backed version of the
- *     same shape (or branch on env in `useRepo()`).
- *  3. Run `supabase/schema.sql` and `supabase/seed.sql` against the project.
- *
- * For the POC, server routes use the in-memory repo and the admin guard below
- * is permissive (no auth). Tighten this once auth is in place.
- */
-import { useRuntimeConfig } from '#imports'
+import { serverSupabaseUser } from '#supabase/server'
 import type { H3Event } from 'h3'
 
-export function isAdminRequest(_event: H3Event): boolean {
-  // TODO: gate on Supabase user email once auth is wired:
-  //   const user = await serverSupabaseUser(event)
-  //   return isAdminEmail(user?.email)
-  return true
+/**
+ * Returns true if the request comes from a Google-authenticated user whose
+ * email is in ADMIN_EMAILS.
+ *
+ * POC fallback: if no user is signed in *and* no ADMIN_EMAILS list is
+ * configured, allow the request — keeps the demo running without auth. The
+ * moment ADMIN_EMAILS is set, this becomes a real gate.
+ */
+export async function isAdminRequest(event: H3Event): Promise<boolean> {
+  const list = adminEmails()
+  const user = await serverSupabaseUser(event).catch(() => null)
+
+  if (list.length === 0 && !user) return true
+  return isAdminEmail(user?.email)
 }
 
 export function isAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false
-  const cfg = useRuntimeConfig()
-  const list = String(cfg.adminEmails ?? '')
+  return adminEmails().includes(email.toLowerCase())
+}
+
+function adminEmails(): string[] {
+  return String(useRuntimeConfig().adminEmails ?? '')
     .split(',')
     .map(s => s.trim().toLowerCase())
     .filter(Boolean)
-  return list.includes(email.toLowerCase())
 }

@@ -3,13 +3,10 @@ export default defineNuxtConfig({
   future: { compatibilityVersion: 4 },
   devtools: { enabled: true },
 
-  // NOTE: `@nuxtjs/supabase` is intentionally NOT registered yet — it fails to
-  // boot without SUPABASE_URL/KEY. The dependency is installed and ready to be
-  // added back once creds are in place. The server routes use an in-memory
-  // repo (server/utils/repo.ts) in the meantime.
   modules: [
     '@nuxt/ui',
     '@pinia/nuxt',
+    '@nuxtjs/supabase',
   ],
 
   css: ['~/assets/css/main.css'],
@@ -17,6 +14,13 @@ export default defineNuxtConfig({
   colorMode: {
     preference: 'dark',
     fallback: 'dark',
+  },
+
+  supabase: {
+    // POC: the app reads its game state from the in-memory repo. Supabase is
+    // wired so that route middleware + serverSupabaseClient/User are available
+    // for the auth swap — but redirect is disabled so anonymous play still works.
+    redirect: false,
   },
 
   runtimeConfig: {

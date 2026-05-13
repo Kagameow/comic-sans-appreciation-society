@@ -1,6 +1,6 @@
 
 export default defineEventHandler(async (event) => {
-  if (!isAdminRequest(event)) throw createError({ statusCode: 403, message: 'admin only' })
+  if (!(await isAdminRequest(event))) throw createError({ statusCode: 403, message: 'admin only' })
   const body = await readBody<{ code?: string }>(event)
   const code = String(body?.code ?? '').trim().toUpperCase()
   if (!code) throw createError({ statusCode: 400, message: 'code required' })

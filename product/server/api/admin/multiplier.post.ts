@@ -1,6 +1,6 @@
 
 export default defineEventHandler(async (event) => {
-  if (!isAdminRequest(event)) throw createError({ statusCode: 403, message: 'admin only' })
+  if (!(await isAdminRequest(event))) throw createError({ statusCode: 403, message: 'admin only' })
   const body = await readBody<{ multiplier?: number; minutes?: number }>(event)
   const multiplier = Number(body?.multiplier ?? 1)
   const minutes = Number(body?.minutes ?? 0)

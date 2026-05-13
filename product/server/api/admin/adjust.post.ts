@@ -1,6 +1,6 @@
 
 export default defineEventHandler(async (event) => {
-  if (!isAdminRequest(event)) throw createError({ statusCode: 403, message: 'admin only' })
+  if (!(await isAdminRequest(event))) throw createError({ statusCode: 403, message: 'admin only' })
   const body = await readBody<{ playerId?: string; delta?: number }>(event)
   const playerId = String(body?.playerId ?? '')
   const delta = Number(body?.delta ?? 0)
