@@ -1,7 +1,15 @@
 export default defineAppConfig({
   ui: {
-    primary: 'emerald',
-    gray: 'slate',
-    notifications: { position: 'top-0 right-0 bottom-auto' },
+    colors: {
+      primary: 'emerald',
+      neutral: 'slate',
+      success: 'emerald',
+      info: 'sky',
+      warning: 'amber',
+      error: 'rose',
+    },
+    button: {
+      defaultVariants: { color: 'primary', variant: 'solid' },
+    },
   },
 })

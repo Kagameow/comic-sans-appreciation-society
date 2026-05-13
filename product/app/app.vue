@@ -1,8 +1,6 @@
 <template>
-  <div>
-    <NuxtLoadingIndicator color="#42b883" />
-    <UNotifications />
-    <UModals />
+  <UApp>
+    <NuxtLoadingIndicator />
     <NuxtPage />
-  </div>
+  </UApp>
 </template>
