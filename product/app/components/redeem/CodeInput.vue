@@ -28,7 +28,7 @@ async function submit() {
         :disabled="lockout.locked.value"
         autofocus
         :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
-        class="flex-1 min-w-0 bg-slate-900 border border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
+        class="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
         @input="code = code.toUpperCase()"
         @keydown.enter="submit"
       />

@@ -42,7 +42,7 @@ function update(r: number, c: number, v: string) {
               v-if="active[r]?.[c]"
               :value="cell"
               maxlength="1"
-              class="aspect-square w-full text-center font-bold text-lg uppercase rounded-md bg-slate-900 border border-white/10 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 ticker-mono"
+              class="aspect-square w-full text-center font-bold text-lg uppercase rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 ticker-mono"
               @input="(e) => update(r, c, (e.target as HTMLInputElement).value)"
             />
             <div v-else class="aspect-square w-full rounded-md bg-white/5" />
