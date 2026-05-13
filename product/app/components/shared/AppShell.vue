@@ -1,6 +1,12 @@
 <script setup lang="ts">
 const game = useGameStore()
 const { isComic, toggle: toggleFont } = useFontMode()
+const colorMode = useColorMode()
+
+const isDark = computed({
+  get: () => colorMode.value === 'dark',
+  set: (v) => { colorMode.preference = v ? 'dark' : 'light' },
+})
 </script>
 
 <template>
@@ -12,12 +18,26 @@ const { isComic, toggle: toggleFont } = useFontMode()
         <div class="flex items-center gap-3">
           <UButton
             variant="ghost"
+            color="neutral"
             size="sm"
             :title="isComic ? 'Switch to boring font' : 'Switch to fun font'"
             @click="toggleFont"
           >
             <span class="text-lg leading-none">{{ isComic ? '🎨' : '📝' }}</span>
           </UButton>
+          <ClientOnly>
+            <UButton
+              :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+              @click="isDark = !isDark"
+            />
+            <template #fallback>
+              <div class="h-8 w-8" />
+            </template>
+          </ClientOnly>
           <SharedMultiplierBadge />
           <SharedPlayerBadge />
           <SharedAuthBadge />
