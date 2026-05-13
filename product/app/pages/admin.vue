@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'admin' })
 
-await useGameSync()
+useGame()
 </script>
 
 <template>

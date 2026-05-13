@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = await useGameSync()
+const game = useGame()
 const { isSignedIn } = useAuthSession()
 const redeem = useCodeRedeem()
 

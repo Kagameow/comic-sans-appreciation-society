@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import * as v from 'valibot'
+import { createFormObject } from '@rstore/vue'
+
 const emit = defineEmits<{ (e: 'resolve', points: number): void }>()
 
 const TARGETS = ['Marieke de Vries', 'Joris van Dijk', 'Sanne Bakker', 'Bram Janssen']
@@ -6,11 +9,27 @@ const ACTIVITIES = ['Darts', 'Foosball', 'Pool', 'a Pull-Up Contest', 'Rock Pape
 
 const target = ref(TARGETS[Math.floor(Math.random() * TARGETS.length)])
 const activity = ref(ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)])
-const code = ref('')
+
+const schema = v.object({
+  code: v.pipe(v.string(), v.trim(), v.minLength(4, 'At least 4 characters')),
+})
+
+const confirmForm = createFormObject({
+  defaultValues: () => ({ code: '' }),
+  schema,
+  async submit(): Promise<{ code: string }> {
+    emit('resolve', 150)
+    return { code: '' }
+  },
+  resetOnSuccess: true,
+})
 </script>
 
 <template>
-  <div class="rounded-2xl border border-emerald-400/30 bg-white/5 p-8 glow-green">
+  <form
+    class="rounded-2xl border border-emerald-400/30 bg-white/5 p-8 glow-green"
+    @submit.prevent="confirmForm()"
+  >
     <div class="text-xs uppercase tracking-widest text-emerald-300 mb-3">⚔ IRL Challenge</div>
     <h2 class="text-3xl font-bold leading-tight mb-2">
       Find <span class="text-emerald-300">{{ target }}</span>
@@ -20,26 +39,30 @@ const code = ref('')
     <UFormField label="Referee Confirmation Code" class="mt-2">
       <div class="flex gap-2">
         <UInput
-          v-model="code"
+          :model-value="confirmForm.code"
           placeholder="ADMIN-XXXX"
           size="lg"
           class="flex-1"
           :ui="{ base: 'ticker-mono uppercase' }"
-          @input="code = code.toUpperCase()"
+          @update:model-value="confirmForm.code = String(($event ?? '')).toUpperCase()"
         />
         <UButton
+          type="submit"
           size="lg"
           color="primary"
-          :disabled="code.length < 4"
-          @click="emit('resolve', 150)"
+          :loading="confirmForm.$loading"
+          :disabled="!confirmForm.code || confirmForm.code.length < 4"
         >
           Confirm Win
         </UButton>
       </div>
     </UFormField>
+    <p v-if="confirmForm.$error" class="text-xs text-rose-400 ticker-mono mt-2">
+      {{ confirmForm.$error.message }}
+    </p>
     <p class="text-xs text-slate-500 mt-3">
       POC: any 4+ char code resolves the win. The real version checks against
       a referee-issued single-use code.
     </p>
-  </div>
+  </form>
 </template>

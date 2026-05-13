@@ -1,48 +1,59 @@
 <script setup lang="ts">
+import * as v from 'valibot'
+import { createFormObject } from '@rstore/vue'
+
 type LockoutState = ReturnType<typeof useCodeLockout>
 
 const props = defineProps<{ lockout: LockoutState }>()
 const emit = defineEmits<{ (e: 'submit', value: string): void }>()
 
-const game = useGameStore()
-const code = ref('')
+const game = useGame()
 const inputEl = ref<HTMLInputElement | null>(null)
 
 defineExpose({ focus: () => inputEl.value?.focus() })
 
-async function submit() {
-  if (!code.value || props.lockout.locked.value) return
-  const value = code.value
-  code.value = ''
-  emit('submit', value)
-}
+const schema = v.object({
+  code: v.pipe(v.string(), v.trim(), v.minLength(1, 'Enter a code')),
+})
+
+const codeForm = createFormObject({
+  defaultValues: () => ({ code: '' }),
+  schema,
+  async submit(values): Promise<{ code: string }> {
+    if (props.lockout.locked.value) return { code: '' }
+    const code = (values.code as string).toUpperCase()
+    emit('submit', code)
+    return { code: '' }
+  },
+  resetOnSuccess: true,
+})
 </script>
 
 <template>
   <div class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-card relative overflow-hidden">
     <div v-if="lockout.locked.value" class="absolute inset-0 animate-shimmer pointer-events-none" />
-    <div class="flex flex-col sm:flex-row gap-3">
+    <form class="flex flex-col sm:flex-row gap-3" @submit.prevent="codeForm()">
       <input
         ref="inputEl"
-        v-model="code"
+        :value="codeForm.code"
         :disabled="lockout.locked.value"
         autofocus
         :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
         class="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
-        @input="code = code.toUpperCase()"
-        @keydown.enter="submit"
+        @input="codeForm.code = ((($event.target as HTMLInputElement).value) || '').toUpperCase()"
       />
       <UButton
+        type="submit"
         size="lg"
         block
         class="sm:!w-auto sm:!block-auto"
         color="primary"
-        :disabled="lockout.locked.value || !code"
-        @click="submit"
+        :disabled="lockout.locked.value || !codeForm.code"
+        :loading="codeForm.$loading"
       >
         Submit
       </UButton>
-    </div>
+    </form>
 
     <div class="mt-4 flex items-center justify-between text-sm">
       <div class="text-slate-400">

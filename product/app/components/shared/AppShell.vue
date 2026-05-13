@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = useGameStore()
+const game = useGame()
 const { isComic, toggle: toggleFont } = useFontMode()
 const colorMode = useColorMode()
 const navOpen = ref(false)

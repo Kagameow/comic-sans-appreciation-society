@@ -20,25 +20,32 @@ pnpm build      # nuxt build
 pnpm typecheck  # nuxt typecheck (vue-tsc)
 ```
 
-`.env` must contain `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_KEY`, and `ADMIN_EMAILS` (see `.env.example`). Nuxt 4's CLI only auto-loads `.env` — `.env.local` is **not** picked up, and without these vars `@nuxtjs/supabase`'s server plugin throws during setup, the failure is swallowed by Nuxt's plugin try/catch, and every SSR request 500s on a downstream `$pinia is undefined` because plugin hooks register before setup runs. The Supabase project also needs the Google OAuth provider enabled and `http://localhost:3000/confirm` whitelisted under Authentication → URL Configuration.
+`.env` must contain `NUXT_PUBLIC_SUPABASE_URL`, `NUXT_PUBLIC_SUPABASE_KEY`, and `ADMIN_EMAILS` (see `.env.example`). Nuxt 4's CLI only auto-loads `.env` — `.env.local` is **not** picked up, and without these vars `@nuxtjs/supabase`'s server plugin throws during setup, the failure is swallowed by Nuxt's plugin try/catch, and every SSR request 500s. The Supabase project also needs the Email provider enabled under Authentication → Providers; the `avatars` Storage bucket must exist (public, with an RLS policy letting authenticated users upload to a folder named after their user id).
 
 ## Architecture
 
-**Server is the source of truth.** Nitro API routes (`server/api/**`) only ever talk to `useRepo()` (`server/utils/repo.ts`), an in-memory data layer pre-seeded with demo players + codes. The Pinia store (`app/stores/game.ts`) is a thin cache; the polling lifecycle lives in `useGameSync` and pauses when the tab is hidden (`useDocumentVisibility` + `useIntervalFn`). Minigame components emit a `base` value; the server applies the multiplier and writes the result — clients cannot self-award.
+**Server is the source of truth.** Nitro API routes (`server/api/**`) only ever talk to `useRepo()` (`server/utils/repo.ts`), an in-memory data layer pre-seeded with demo players + codes. Minigame components emit a `base` value; the server applies the multiplier and writes the result — clients cannot self-award.
 
-**Identity comes from the Supabase session.** Player rows are linked to Supabase users by `email`/`userId`. The first time a user signs in, `repo.ensurePlayerForUser()` either reclaims a seed row matching their email or creates a fresh player. Server routes resolve identity via `currentPlayer(event)` (nullable, for reads) or `requirePlayer(event)` (throws 401, for writes). **No client request carries a `playerName` field** — the session is authoritative.
+**Client state is rstore.** All data + form state goes through `@rstore/nuxt`. There is no Pinia. Collections live in `app/rstore/*.ts`, plugins in `app/rstore/plugins/*.ts`, both auto-scanned by the module. Two plugins back three collections:
 
-**Auth surface (Supabase + Google):**
+- `app/rstore/plugins/supabase-auth.ts` — wires the `session` and `currentUser` collections to Supabase Auth (`signInWithPassword`, `getUser`, `updateUser`, `signOut`).
+- `app/rstore/plugins/nitro-api.ts` — wires the `gameState` collection's `fetchFirst` hook to `GET /api/state`.
+
+`app/composables/useGame.ts` is the thin call-site composable wrapping `store.gameState.query(q => q.first('current'))` + a visibility-aware poll (`useDocumentVisibility` + `useIntervalFn`) that pauses when the tab is hidden. It returns a `reactive()` mirroring the old Pinia getter shape (me/config/players/superWinner/activeMultiplier/isMultiplierActive/clueUnlocked/sortedPlayers) so call sites just do `const game = useGame()` and access fields without `.value`.
+
+**Identity comes from the Supabase session.** Player rows are linked to Supabase users by `userId`. On every resolve, `repo.ensurePlayerForUser()` syncs the row's `name` + `email` + `avatarUrl` from the auth identity — there is no separate name-edit flow at the player-row level, and no email-match seed reclaim (so seed players stay decoys on the leaderboard). The display name comes from `user_metadata.display_name`, falling back to the raw email. Avatars come from `user_metadata.avatar_url` (a public URL in the `avatars` Storage bucket). Server routes resolve identity via `currentPlayer(event)` (nullable, for reads) or `requirePlayer(event)` (throws 401, for writes). **No client request carries a `playerName` field** — the session is authoritative.
+
+**Auth surface (Supabase email/password):**
 - `/admin` page + `/api/admin/*` + `/api/super-event/dismiss` require an email in `ADMIN_EMAILS`. Dual-layered: `app/middleware/admin.ts` is UX (redirects), `server/utils/supabase.ts → isAdminRequest()` is the security gate.
 - `/api/codes/redeem` and `/api/codes/award` require *any* authenticated user.
 - Code Check (`/`) shows a `SignInGate` to anonymous visitors. Leaderboard (`/leaderboard`) is fully public — it's the TV view.
-- `/login` runs `signInWithOAuth({ provider: 'google' })`; `/confirm` reads the cookie-stored original destination via `useSupabaseCookieRedirect().pluck()` and redirects.
-- Admin nav link is hidden from non-admin sessions in `AppNav`.
+- `/login` uses `store.session.createForm({ schema })` (valibot) backed by the supabase-auth plugin; on success the user is bounced to the cookie-stored original destination via `useSupabaseCookieRedirect().pluck()`.
+- Admin nav link is hidden from non-admin sessions in `AppNav`; the same nav re-renders in a `USlideover` triggered by a `md:hidden` hamburger.
 
 **Move-to-Supabase-DB swap path** (auth is already on Supabase; the data layer is still in-memory):
 1. Run `db/schema.sql` + `db/seed.sql`.
 2. Swap the body of `server/utils/repo.ts` for a Supabase-backed implementation exposing the same methods — API routes don't import any Supabase client directly.
-3. Replace `useIntervalFn` polling in `useGameSync` with a realtime channel subscription on `players` + `game_config`.
+3. In `app/rstore/plugins/nitro-api.ts`, swap the polling-based `fetchFirst` for an rstore `subscribe` hook backed by a Supabase realtime channel on `players` + `game_config`. Drop the `useIntervalFn` in `useGame.ts`.
 
 **Super Code flow** (in `repo.ts`):
 - Victory codes (`DART-WIN`, …) bump `players.victories` and award `150 × multiplier`.
@@ -50,10 +57,11 @@ pnpm typecheck  # nuxt typecheck (vue-tsc)
 
 ## Conventions
 
-- **Don't bypass the server.** New game-state mutations belong in `repo.ts` + an `/api` route; don't mutate the Pinia store directly.
+- **Every form goes through rstore.** No exceptions. Login, display-name edit, avatar upload, code redemption, IRL-challenge confirmation — all use `createFormObject({ schema, submit })` from `@rstore/vue` (collection-bound `createForm`/`updateForm` when the form maps to a CRUD operation, plain `createFormObject` when it's a custom action). Schemas are valibot (`v.object({ ... })`). UFormField is fine as a layout wrapper around the field, but **don't combine `<UForm>` validation with rstore form validation** — pick one (rstore).
+- **Don't bypass the server.** New game-state mutations belong in `repo.ts` + an `/api` route; don't mutate rstore cache directly from components — go through `store.x.update(...)` / `update`/`create` etc., let the plugin route to the API.
 - **Minigame components must not self-award.** Pattern: component emits `resolve(base)`; server applies multiplier in `/api/codes/award`.
 - **Don't trust client-supplied identity.** Server routes derive the player from `requirePlayer(event)` / `currentPlayer(event)`; the request body never carries a `playerName`.
-- **Auth allowlist is `email`-keyed, not `user_metadata`.** Per Supabase security guidance, `user_metadata` is user-editable. Email is the OAuth provider's assertion.
-- **Auto-imports are on.** First-party components (path-prefixed: `RedeemCodeInput`, `AdminCodesPanel`, etc.), composables, utils, and Pinia stores all auto-import. Types from `#shared/types/*` still need explicit imports — only runtime values auto-import.
+- **Auth allowlist is `email`-keyed, not `user_metadata`.** Per Supabase security guidance, `user_metadata` is user-editable. Email is the provider's assertion.
+- **Auto-imports are on.** First-party components (path-prefixed: `RedeemCodeInput`, `AdminCodesPanel`, etc.), composables, utils auto-import. rstore auto-imports `withItemType`, `defineCollection`, `defineRstorePlugin`, `useStore`, `RStoreSchema`. `createFormObject` is **not** auto-imported — import it explicitly from `@rstore/vue`. Types from `#shared/types/*` still need explicit imports — only runtime values auto-import.
 - **VueUse over hand-rolled timers.** Use `useIntervalFn`, `refAutoReset`, `whenever`, `useTimeoutFn` — there's no need for bare `setInterval`/`setTimeout` + manual cleanup.
-- Nuxt UI v2 + Tailwind via `@nuxt/ui`; Lucide via `@iconify-json/lucide`. Theme tokens in `app/app.config.ts`, custom CSS in `app/assets/css/main.css`. Color mode forced to dark.
+- Nuxt UI v4 + Tailwind v4 via `@nuxt/ui`; Lucide via `@iconify-json/lucide`. Theme tokens via `@theme` in `app/assets/css/main.css`, component overrides in `app/app.config.ts → ui.colors`. Dark/light toggle wired via `useColorMode()` in `AppShell`; light mode still needs a color audit (most surfaces are tuned for dark — see the open follow-up).

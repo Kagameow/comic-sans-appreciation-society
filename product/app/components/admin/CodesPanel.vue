@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Code } from '#shared/types/game'
 
-const game = useGameStore()
+const game = useGame()
 const { pickSuper } = useAdminActions()
 
 const { data: codesData, refresh } = await useAsyncData('admin-codes', () =>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = useGameStore()
+const game = useGame()
 const { adjustPoints } = useAdminActions()
 
 const search = ref('')

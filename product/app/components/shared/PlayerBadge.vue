@@ -5,7 +5,7 @@ import { createFormObject } from '@rstore/vue'
 const { user, isSignedIn, isAdmin, signOut } = useAuthSession()
 const supabase = useSupabaseClient()
 const store = useStore()
-const game = useGameStore()
+const game = useGame()
 const toast = useToast()
 
 const currentDisplay = computed(() => {
