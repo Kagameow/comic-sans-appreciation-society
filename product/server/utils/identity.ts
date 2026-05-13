@@ -13,9 +13,22 @@ export async function currentPlayer(event: H3Event): Promise<Player | null> {
   return useRepo().ensurePlayerForUser({
     id: user.id,
     email: user.email,
-    name: (user.user_metadata?.full_name as string | undefined) ?? null,
+    name: displayNameForUser(user),
     avatar: null,
   })
+}
+
+function displayNameForUser(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {
+  const full = user.user_metadata?.full_name
+  if (typeof full === 'string' && full.trim()) return full.trim()
+  const local = user.email?.split('@')[0]
+  if (!local) return 'Anonymous'
+  return local
+    .replace(/[._-]+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
 }
 
 /**

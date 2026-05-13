@@ -96,25 +96,26 @@ export function useRepo() {
     },
 
     /**
-     * Resolves a Supabase user to their player row. Lookup order:
-     *   1. existing player linked by userId (returning user)
-     *   2. existing player matched by email (claim a seed/demo row)
-     *   3. create a fresh player from the user's profile (first sign-in)
+     * Resolves a Supabase user to their player row, keyed on userId. The
+     * display name + email are synced from the auth identity on every call,
+     * so a user's leaderboard name always tracks who they're signed in as
+     * (no stale or seed-derived names sticking around after dev iterations).
+     * Seed players are leaderboard decoys — they are never claimed by email.
      */
     ensurePlayerForUser(user: { id: string; email?: string | null; name?: string | null; avatar?: string | null }): Player {
       const email = user.email?.toLowerCase() ?? ''
-      let p = store.players.find(x => x.userId === user.id)
-      if (!p && email) p = store.players.find(x => x.email === email)
-      if (p) {
-        if (!p.userId) p.userId = user.id
-        if (!p.email && email) p.email = email
-        return p
+      const name = user.name?.trim() || (email ? email.split('@')[0]! : 'Anonymous')
+      const existing = store.players.find(x => x.userId === user.id)
+      if (existing) {
+        existing.name = name
+        if (email) existing.email = email
+        return existing
       }
       const fresh: Player = {
         id: `u${store.players.length + 1}-${user.id.slice(0, 6)}`,
         userId: user.id,
         email: email || undefined,
-        name: user.name || (email ? email.split('@')[0]! : 'Anonymous'),
+        name,
         avatar: user.avatar || '🦊',
         points: 0,
         victories: 0,
