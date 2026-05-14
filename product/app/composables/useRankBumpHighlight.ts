@@ -9,8 +9,7 @@ export function useRankBumpHighlight(players: Ref<Player[]>, durationMs = 900) {
   const bumpedId = refAutoReset<string | null>(null, durationMs)
   let prevOrder: string[] = []
 
-  watch(players, (next) => {
-    const order = next.map(p => p.id)
+  watch(() => players.value.map(p => p.id), (order) => {
     for (let i = 0; i < order.length; i++) {
       if (prevOrder.length > 0 && order[i] !== prevOrder[i]) {
         bumpedId.value = order[i] ?? null
@@ -18,7 +17,7 @@ export function useRankBumpHighlight(players: Ref<Player[]>, durationMs = 900) {
       }
     }
     prevOrder = order
-  }, { deep: true })
+  })
 
   return bumpedId
 }

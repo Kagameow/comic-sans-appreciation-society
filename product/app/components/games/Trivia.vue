@@ -7,14 +7,13 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'resolve', points: number): void }>()
 
 const TOTAL = 20
+const RESOLVE_DELAY_MS = 1200
 const elapsed = ref(0)
 const picked = ref<number | null>(null)
-let timer: ReturnType<typeof setInterval> | null = null
 
-onMounted(() => {
-  timer = setInterval(() => { if (picked.value === null) elapsed.value += 0.1 }, 100)
-})
-onUnmounted(() => { if (timer) clearInterval(timer) })
+useIntervalFn(() => {
+  if (picked.value === null) elapsed.value += 0.1
+}, 100)
 
 const remaining = computed(() => Math.max(0, TOTAL - elapsed.value))
 const pct = computed(() => (remaining.value / TOTAL) * 100)
@@ -25,7 +24,7 @@ const textColor = computed(() => remaining.value > 13 ? 'text-emerald-400' : rem
 function pick(i: number) {
   picked.value = i
   const earned = i === props.correctIdx ? points.value : 0
-  setTimeout(() => emit('resolve', earned), 1200)
+  useTimeoutFn(() => emit('resolve', earned), RESOLVE_DELAY_MS)
 }
 </script>
 

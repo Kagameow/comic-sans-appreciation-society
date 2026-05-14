@@ -33,7 +33,7 @@ export function useCodeRedeem() {
   }
 
   function maybeOpenClue(res: { clueUnlocked?: boolean }) {
-    if (res.clueUnlocked) setTimeout(() => { showClueModal.value = true }, 1200)
+    if (res.clueUnlocked) useTimeoutFn(() => { showClueModal.value = true }, 1200)
   }
 
   async function submit(raw: string) {
