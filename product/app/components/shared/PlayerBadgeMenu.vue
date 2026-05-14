@@ -22,21 +22,30 @@ const currentAvatarUrl = computed(() => {
 const displayName = computed(() => {
   const meta = (user.value?.user_metadata ?? {}) as Record<string, unknown>
   const dn = meta.display_name
-  if (typeof dn === 'string' && dn) return dn
-  if (game.me?.name) return game.me.name
+  if (typeof dn === 'string' && dn)
+    return dn
+  if (game.me?.name)
+    return game.me.name
   return user.value?.email ?? ''
 })
 
-// CRUD update on currentUser → rstore's collection-bound updateForm.
-// Schema lives on the collection as formSchema.update; defaults come from
-// findFirst() via the supabase-auth plugin's fetchFirst hook.
-const nameForm = await store.currentUser.updateForm({})
-nameForm.$onSuccess(() => {
-  toast.add({ title: 'Display name saved', color: 'success', icon: 'i-lucide-check' })
+// Tier badge — docs/refactor-plan.md §4.
+const tier = computed(() => {
+  const me = game.me
+  if (!me)
+    return null
+  if (me.gems >= 3)
+    return 'Composition API contributor'
+  if (me.victories >= 3)
+    return 'Options API contributor'
+  return null
 })
 
-// Avatar is a custom action (Storage upload → publicUrl → currentUser.update),
-// so createFormObject is correct here.
+const nameForm = await store.currentUser.updateForm({})
+nameForm.$onSuccess(() => {
+  toast.add({ title: '> commit recorded', color: 'success', icon: 'i-lucide-check' })
+})
+
 const avatarSchema = v.object({
   file: v.pipe(
     v.instance(File, 'Pick an image'),
@@ -49,14 +58,16 @@ const avatarForm = createFormObject({
   defaultValues: () => ({ file: undefined as File | undefined }),
   schema: avatarSchema,
   async submit(values): Promise<void> {
-    if (!user.value || !values.file) throw new Error('Not signed in')
+    if (!user.value || !values.file)
+      throw new Error('Not signed in')
     const uid = user.value.id
     const ext = values.file.name.split('.').pop()?.toLowerCase() || 'png'
     const path = `${uid}/${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, values.file, {
       contentType: values.file.type,
     })
-    if (upErr) throw new Error(upErr.message)
+    if (upErr)
+      throw new Error(upErr.message)
     const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
     await store.currentUser.update({ avatar_url: pub.publicUrl }, { key: uid })
   },
@@ -64,11 +75,12 @@ const avatarForm = createFormObject({
 })
 
 avatarForm.$onSuccess(() => {
-  toast.add({ title: 'Avatar updated', color: 'success', icon: 'i-lucide-check' })
+  toast.add({ title: '> contributor profile picture updated', color: 'success', icon: 'i-lucide-check' })
 })
 
 watch(() => avatarForm.file, (f) => {
-  if (f instanceof File) avatarForm.$submit()
+  if (f instanceof File)
+    avatarForm.$submit()
 })
 </script>
 
@@ -77,20 +89,20 @@ watch(() => avatarForm.file, (f) => {
     <UButton
       variant="ghost"
       color="neutral"
-      class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-md border border-white/10 hover:bg-white/5"
+      class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 border border-[color:var(--line)] hover:border-[color:var(--line-hot)] hover:bg-[color:var(--surface-deep)]"
     >
       <span
         v-if="game.me"
-        class="ticker-mono text-xs sm:text-sm font-semibold text-emerald-300 whitespace-nowrap"
+        class="font-mono text-xs sm:text-sm font-semibold text-[color:var(--vue)] whitespace-nowrap"
       >
-        {{ game.me.points.toLocaleString() }}<span class="hidden sm:inline"> pts</span>
+        {{ game.me.points.toLocaleString() }}<span class="hidden sm:inline"> credits</span>
       </span>
       <img
         v-if="currentAvatarUrl"
         :src="currentAvatarUrl"
         :alt="displayName"
         class="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover"
-      />
+      >
       <div
         v-else
         class="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/10 flex items-center justify-center text-base sm:text-lg"
@@ -98,9 +110,8 @@ watch(() => avatarForm.file, (f) => {
         {{ game.me?.avatar ?? '👤' }}
       </div>
       <span
-        :class="[
-          'hidden md:inline text-xs ticker-mono truncate max-w-[160px]',
-          isAdmin ? 'text-emerald-300' : 'text-slate-300',
+        class="hidden md:inline text-xs font-mono truncate max-w-[160px]" :class="[
+          isAdmin ? 'text-[color:var(--vue)]' : 'text-[color:var(--ink-body)]',
         ]"
       >
         {{ displayName }}
@@ -108,7 +119,14 @@ watch(() => avatarForm.file, (f) => {
     </UButton>
     <template #content>
       <div class="p-3 w-72 space-y-3">
-        <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
+        <div>
+          <div class="font-mono text-xs text-[color:var(--ink-muted)] truncate">
+            {{ user?.email }}
+          </div>
+          <div v-if="tier" class="font-mono text-[10px] text-[color:var(--vue)] uppercase tracking-[0.04em] mt-0.5">
+            {{ tier }}
+          </div>
+        </div>
 
         <UForm
           :state="nameForm"
@@ -116,13 +134,13 @@ watch(() => avatarForm.file, (f) => {
           @submit="nameForm.$submit()"
           @error="focusFirstError"
         >
-          <UFormField label="Display name" name="display_name">
+          <UFormField label="user.name" name="display_name">
             <div class="flex gap-2">
               <UInput
                 v-model="nameForm.display_name"
                 size="sm"
                 class="flex-1"
-                placeholder="Your name"
+                placeholder="contributor handle"
                 :disabled="nameForm.$loading"
               />
               <UButton
@@ -131,7 +149,7 @@ watch(() => avatarForm.file, (f) => {
                 :loading="nameForm.$loading"
                 :disabled="!nameForm.$hasChanges()"
               >
-                Save
+                commit
               </UButton>
             </div>
           </UFormField>
@@ -149,11 +167,11 @@ watch(() => avatarForm.file, (f) => {
           :schema="avatarForm.$schema"
           @submit="avatarForm.$submit()"
         >
-          <UFormField label="Avatar" name="file">
+          <UFormField label="defineModel({ avatar })" name="file">
             <UFileUpload
               v-model="avatarForm.file"
               accept="image/*"
-              :label="avatarForm.$loading ? 'Uploading…' : 'Drop or click to upload'"
+              :label="avatarForm.$loading ? 'Pushing…' : 'Drop or click to upload'"
               description="Max 2MB · PNG / JPG / WebP"
               class="w-full"
               :disabled="avatarForm.$loading"
@@ -168,9 +186,11 @@ watch(() => avatarForm.file, (f) => {
           />
         </UForm>
 
-        <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
+        <div v-if="isAdmin" class="font-mono text-xs text-[color:var(--vue)] uppercase tracking-[0.04em]">
+          ⬡ maintainer
+        </div>
         <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
-          Sign out
+          git logout
         </UButton>
       </div>
     </template>

@@ -1,25 +1,31 @@
 type Mode = 'input' | 'trivia' | 'crossword' | 'challenge'
-type Flash = { pts: number; mult: number }
-type RedeemResponse =
-  | { kind: 'invalid' }
-  | { kind: 'point' | 'victory'; awarded: number; multiplier: number; clueUnlocked: boolean }
-  | { kind: 'trivia' | 'crossword' | 'challenge'; codeRef: string }
-  | { kind: 'super'; alreadyWonBy?: string }
+interface Flash { pts: number, mult: number }
 
-type AwardResponse = {
+interface RedeemResponse {
+  kind: 'invalid' | 'point' | 'victory' | 'trivia' | 'crossword' | 'challenge' | 'super'
+  awarded?: number
+  multiplier?: number
+  clueUnlocked?: boolean
+  alreadyWonBy?: string
+  codeRef?: string
+  lines: string[]
+}
+
+interface AwardResponse {
   awarded: number
   multiplier: number
   clueUnlocked?: boolean
 }
 
 /**
- * Orchestrates the submit / minigame / award flow for the Code Check page.
- * Owns mode state, the active minigame ref, and the transient flash banner.
- * Server is the source of truth — this composable only dispatches.
+ * Orchestrates the submit / minigame / award flow for the Contributor
+ * Terminal. Owns mode state, the active minigame ref, and the transient
+ * flash banner; pushes the server-authored terminal voice into the bus.
  */
 export function useCodeRedeem() {
   const game = useGame()
   const lockout = useCodeLockout()
+  const term = useTerminalBus()
 
   const mode = ref<Mode>('input')
   const activeMinigame = ref<{ codeRef: string } | null>(null)
@@ -33,25 +39,35 @@ export function useCodeRedeem() {
   }
 
   function maybeOpenClue(res: { clueUnlocked?: boolean }) {
-    if (res.clueUnlocked) useTimeoutFn(() => { showClueModal.value = true }, 1200)
+    if (res.clueUnlocked)
+      useTimeoutFn(() => { showClueModal.value = true }, 1200)
+  }
+
+  function pushLines(lines: string[] | undefined, tone?: 'vue' | 'amber' | 'red') {
+    if (!lines)
+      return
+    for (const text of lines) term.line(text, tone)
   }
 
   async function submit(raw: string) {
     const code = raw.trim().toUpperCase()
-    if (!code || lockout.locked.value) return
+    if (!code || lockout.locked.value)
+      return
 
     const res = await $fetch<RedeemResponse>('/api/codes/redeem', {
       method: 'POST',
       body: { code },
-    }).catch(() => ({ kind: 'invalid' as const }))
+    }).catch(() => ({ kind: 'invalid' as const, lines: [`> git commit -m "${code}"`, '> ⚠ Network failure.'] }))
 
     await game.refresh()
 
     switch (res.kind) {
       case 'invalid':
+        pushLines(res.lines, 'red')
         lockout.recordFail()
         return
       case 'super':
+        pushLines(res.lines, res.alreadyWonBy ? 'amber' : 'vue')
         if (res.alreadyWonBy) {
           flash.value = { pts: 0, mult: 1 }
           return
@@ -61,13 +77,15 @@ export function useCodeRedeem() {
         return
       case 'point':
       case 'victory':
-        flashAward(res.awarded, res.multiplier)
+        pushLines(res.lines, 'vue')
+        flashAward(res.awarded ?? 0, res.multiplier ?? 1)
         maybeOpenClue(res)
         return
       case 'trivia':
       case 'crossword':
       case 'challenge':
-        activeMinigame.value = { codeRef: res.codeRef }
+        pushLines(res.lines, 'amber')
+        activeMinigame.value = { codeRef: res.codeRef ?? 'minigame' }
         mode.value = res.kind
     }
   }
@@ -82,8 +100,12 @@ export function useCodeRedeem() {
     mode.value = 'input'
     activeMinigame.value = null
     if (res.awarded > 0) {
+      term.line(`> RFC ${codeRef} merged. ref(credits).value += ${res.awarded}`, 'vue')
       flashAward(res.awarded, res.multiplier)
       maybeOpenClue(res)
+    }
+    else {
+      term.line('> RFC closed without merge.', 'amber')
     }
   }
 

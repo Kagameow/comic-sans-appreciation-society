@@ -11,7 +11,8 @@ export default defineRstorePlugin({
   category: 'remote',
   setup({ hook }) {
     hook('fetchFirst', async (payload) => {
-      if (payload.collection.name !== 'gameState') return
+      if (payload.collection.name !== 'gameState')
+        return
       const snap = await $fetch<StateSnapshot>('/api/state')
       payload.setResult({ id: 'current', ...snap })
     })

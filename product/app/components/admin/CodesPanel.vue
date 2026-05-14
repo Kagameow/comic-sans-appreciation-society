@@ -2,75 +2,83 @@
 import type { Code } from '#shared/types/game'
 
 const game = useGame()
-const { pickSuper } = useAdminActions()
+const admin = useAdminActions()
 
 const { data: codesData, refresh } = await useAsyncData('admin-codes', () =>
-  $fetch<{ codes: Code[] }>('/api/admin/codes'),
-)
+  $fetch<{ codes: Code[] }>('/api/admin/codes'))
 const codes = computed(() => codesData.value?.codes ?? [])
 
-async function selectSuper(code: string) {
-  await pickSuper(code)
+const search = ref('')
+const filtered = computed(() =>
+  codes.value.filter(c => c.code.toLowerCase().includes(search.value.toLowerCase())),
+)
+
+async function promote(code: string) {
+  await admin.pickSuper(code)
   await refresh()
+}
+
+function statusFor(c: Code) {
+  if (c.isSuperCode && !c.isUsed)
+    return { label: '⬢ active super', tone: 'amber' as const }
+  if (c.isUsed)
+    return { label: '✓ merged', tone: 'vue' as const }
+  return { label: '◌ unused', tone: 'ink' as const }
+}
+
+const toneClass = {
+  vue: 'text-[color:var(--vue)] border-[color:var(--vue)]',
+  amber: 'text-[color:var(--amber)] border-[color:var(--amber)]',
+  ink: 'text-[color:var(--ink-muted)] border-[color:var(--line)]',
 }
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
-    <div class="flex items-center justify-between mb-4">
-      <div>
-        <h2 class="text-xl font-semibold">Code Registry</h2>
-        <p class="text-xs text-slate-400 mt-1">
-          Active Super Code:
-          <span class="ticker-mono text-emerald-300">{{ game.config.superCode ?? '—' }}</span>
-        </p>
+  <section class="bg-[color:var(--surface)] border border-[color:var(--line)] p-5 space-y-4">
+    <header class="flex items-center justify-between gap-2">
+      <div class="font-mono text-xs text-[color:var(--vue)]">
+        provide(&apos;superCode&apos;, ref(...))
       </div>
-    </div>
-    <div class="overflow-x-auto rounded-lg border border-white/10">
-      <table class="w-full text-sm min-w-[480px]">
-        <thead class="bg-white/[0.04] text-slate-400 text-xs uppercase">
-          <tr>
-            <th class="text-left px-4 py-2">Code</th>
-            <th class="text-left px-4 py-2">Type</th>
-            <th class="text-left px-4 py-2">Value</th>
-            <th class="text-left px-4 py-2">Status</th>
-            <th class="text-center px-4 py-2">Super</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="c in codes"
-            :key="c.code"
-            :class="['border-t border-white/10', c.isSuperCode ? 'bg-emerald-500/5' : '']"
+      <UInput
+        v-model="search"
+        size="sm"
+        placeholder="grep keys"
+        icon="i-lucide-search"
+        class="w-40"
+      />
+    </header>
+
+    <p class="font-mono text-[11px] text-[color:var(--ink-muted)]">
+      active super: <span class="text-[color:var(--amber)]">{{ game.config.superCode ?? '—' }}</span>
+    </p>
+
+    <div class="space-y-1 max-h-[520px] overflow-y-auto">
+      <div
+        v-for="c in filtered"
+        :key="c.code"
+        class="grid grid-cols-[1fr_auto] gap-2 items-center px-2 py-1.5 border" :class="[
+          c.isSuperCode ? 'border-[color:var(--amber)] bg-[color:var(--amber)]/10' : 'border-transparent hover:border-[color:var(--line)]',
+        ]"
+      >
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="font-mono text-sm text-[color:var(--ink)]">{{ c.code }}</span>
+          <span class="font-mono text-[10px] text-[color:var(--ink-muted)]">{{ c.type }} · {{ c.value }}</span>
+          <span class="ml-auto font-mono text-[10px] px-1 border" :class="[toneClass[statusFor(c).tone]]">
+            {{ statusFor(c).label }}
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <UButton
+            size="xs"
+            :variant="c.isSuperCode ? 'solid' : 'outline'"
+            color="warning"
+            :disabled="c.isSuperCode"
+            @click="promote(c.code)"
           >
-            <td class="px-4 py-2 ticker-mono flex items-center gap-2">
-              <UIcon v-if="c.isSuperCode" name="i-lucide-crown" class="h-3.5 w-3.5 text-emerald-300" />
-              {{ c.code }}
-            </td>
-            <td class="px-4 py-2">
-              <span :class="c.type === 'super' ? 'text-emerald-300 font-semibold' : ''">{{ c.type }}</span>
-            </td>
-            <td class="px-4 py-2 ticker-mono">{{ c.value }}</td>
-            <td class="px-4 py-2">
-              <span
-                :class="[
-                  'px-2 py-0.5 rounded text-xs',
-                  c.isUsed ? 'bg-white/10 text-slate-400' : 'bg-emerald-500/15 text-emerald-300',
-                ]"
-              >
-                {{ c.isUsed ? 'Used' : 'Unused' }}
-              </span>
-            </td>
-            <td class="px-4 py-2 text-center">
-              <USwitch
-                :model-value="c.isSuperCode"
-                color="primary"
-                @update:model-value="(v: boolean) => v && selectSuper(c.code)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            promote
+          </UButton>
+        </div>
+      </div>
     </div>
   </section>
 </template>

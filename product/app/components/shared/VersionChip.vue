@@ -11,13 +11,7 @@ withDefaults(defineProps<{
 <template>
   <UTooltip text="Released: 2020-09-18. Today: the migration completes.">
     <span
-      :class="[
-        'inline-flex items-center px-1.5 py-0.5',
-        'font-mono text-[11px] uppercase tracking-[0.04em]',
-        'border border-[color:var(--line)] bg-[color:var(--surface-deep)]',
-        'text-[color:var(--ink-muted)]',
-        'hover:text-[color:var(--ink-body)] hover:border-[color:var(--line-hot)]',
-        'transition-colors cursor-help select-none',
+      class="inline-flex items-center px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-[0.04em] border border-[color:var(--line)] bg-[color:var(--surface-deep)] text-[color:var(--ink-muted)] hover:text-[color:var(--ink-body)] hover:border-[color:var(--line-hot)] transition-colors cursor-help select-none" :class="[
         inline ? '' : 'fixed bottom-3 right-3 z-50',
       ]"
     >

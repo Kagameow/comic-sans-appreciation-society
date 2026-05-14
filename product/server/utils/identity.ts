@@ -9,7 +9,8 @@ import type { Player } from '#shared/types/game'
  */
 export async function currentPlayer(event: H3Event): Promise<Player | null> {
   const user = await serverSupabaseUser(event).catch(() => null)
-  if (!user) return null
+  if (!user)
+    return null
   return useRepo().ensurePlayerForUser({
     id: user.id,
     email: user.email,
@@ -24,9 +25,10 @@ function avatarUrlForUser(user: { user_metadata?: Record<string, unknown> | null
   return typeof url === 'string' && url.trim() ? url.trim() : null
 }
 
-function displayNameForUser(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {
+function displayNameForUser(user: { email?: string | null, user_metadata?: Record<string, unknown> | null }): string {
   const display = user.user_metadata?.display_name
-  if (typeof display === 'string' && display.trim()) return display.trim()
+  if (typeof display === 'string' && display.trim())
+    return display.trim()
   return user.email?.trim() || 'Anonymous'
 }
 
@@ -36,6 +38,7 @@ function displayNameForUser(user: { email?: string | null; user_metadata?: Recor
  */
 export async function requirePlayer(event: H3Event): Promise<Player> {
   const player = await currentPlayer(event)
-  if (!player) throw createError({ statusCode: 401, message: 'sign in required' })
+  if (!player)
+    throw createError({ statusCode: 401, message: 'sign in required' })
   return player
 }

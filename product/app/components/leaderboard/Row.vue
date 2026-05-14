@@ -1,57 +1,99 @@
 <script setup lang="ts">
 import type { Player } from '#shared/types/game'
+import { APP_VERSION } from '#shared/constants/game'
 
 const props = defineProps<{
   player: Player
   rank: number
   isMe: boolean
   bumped: boolean
+  isSuperWinner?: boolean
 }>()
 
-const medals = ['🥇', '🥈', '🥉']
+// docs/refactor-plan.md §2.4 — 3 columns at fixed heights (132px in tv-mode).
+// Top-3 share the contour but with brighter rank glyphs.
+const tierColor = ['text-[color:var(--amber)]', 'text-[color:var(--vue)]', 'text-[color:var(--vue-dim)]']
 const isPodium = computed(() => props.rank < 3)
-const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${props.rank + 1}`)
+const rankLabel = computed(() => `#${(props.rank + 1).toString().padStart(2, '0')}`)
+const rankClass = computed(() => isPodium.value ? tierColor[props.rank] ?? '' : 'text-[color:var(--ink-muted)]')
 </script>
 
 <template>
   <div
-    :class="[
-      'relative flex items-center gap-2 sm:gap-4 rounded-xl border transition-all',
-      isPodium ? 'py-3 px-3 sm:py-5 sm:px-6 bg-white/5 border-emerald-400/30' : 'py-2 px-3 sm:py-3 sm:px-4 bg-white/[0.03] border-white/10',
-      isMe ? 'ring-1 ring-emerald-400/60' : '',
-      bumped ? 'animate-rank-up' : '',
+    class="grid grid-cols-[10%_60%_30%] items-center px-6 py-4 border-b border-[color:var(--line)]/40 transition-all" :class="[
+      bumped ? 'animate-charge-in bg-[color:var(--vue)]/[0.22]' : '',
+      isMe ? 'bg-[color:var(--surface)]' : '',
+      isSuperWinner ? 'border-y-2 border-[color:var(--amber)] glow-amber' : '',
     ]"
   >
-    <div :class="['ticker-mono font-bold shrink-0', isPodium ? 'text-2xl sm:text-3xl w-8 sm:w-12' : 'text-base sm:text-lg w-8 sm:w-10 text-slate-400']">
-      {{ rankLabel }}
+    <!-- Tier glyph + rank -->
+    <div class="flex items-center gap-2">
+      <UIcon
+        v-if="isPodium"
+        name="i-lucide-hexagon"
+        class="h-7 w-7" :class="[rankClass]"
+      />
+      <span class="font-display text-3xl sm:text-5xl tabular-nums" :class="[rankClass]">
+        {{ rankLabel }}
+      </span>
     </div>
-    <img
-      v-if="player.avatarUrl"
-      :src="player.avatarUrl"
-      :alt="player.name"
-      :class="[
-        'rounded-full object-cover shrink-0',
-        isPodium ? 'h-10 w-10 sm:h-14 sm:w-14' : 'h-9 w-9 sm:h-10 sm:w-10',
-      ]"
-    />
-    <div
-      v-else
-      :class="[
-        'rounded-full bg-white/10 flex items-center justify-center shrink-0',
-        isPodium ? 'h-10 w-10 sm:h-14 sm:w-14 text-2xl sm:text-3xl' : 'h-9 w-9 sm:h-10 sm:w-10 text-lg sm:text-xl',
-      ]"
-    >
-      {{ player.avatar }}
-    </div>
-    <div class="flex-1 min-w-0">
-      <div :class="['font-semibold truncate', isPodium ? 'text-base sm:text-xl' : 'text-sm sm:text-base']">
-        {{ player.name }}
-        <span v-if="isMe" class="text-xs text-emerald-300 font-normal">(you)</span>
+
+    <!-- Contributor block -->
+    <div class="flex items-center gap-4">
+      <img
+        v-if="player.avatarUrl"
+        :src="player.avatarUrl"
+        :alt="player.name"
+        class="h-10 w-10 sm:h-12 sm:w-12 object-cover border border-[color:var(--line)]"
+      >
+      <div
+        v-else
+        class="h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center text-2xl bg-[color:var(--surface)] border border-[color:var(--line)]"
+      >
+        {{ player.avatar }}
       </div>
-      <div class="text-xs text-slate-400 truncate">{{ player.latest }}</div>
+      <div class="min-w-0">
+        <div class="font-mono text-lg sm:text-2xl text-[color:var(--ink)] truncate flex items-center gap-2">
+          {{ player.name }}
+          <span v-if="isSuperWinner" class="font-mono text-[10px] text-[color:var(--amber)] border border-[color:var(--amber)] px-1">
+            {{ APP_VERSION }}
+          </span>
+          <span v-if="isMe" class="font-mono text-xs text-[color:var(--vue)]">(you)</span>
+        </div>
+        <div class="flex items-center gap-2 mt-1">
+          <div class="flex gap-1">
+            <div
+              v-for="i in 5"
+              :key="`c-${i}`"
+              class="h-2 w-2 rounded-full" :class="[
+                i <= player.gems ? 'bg-[color:var(--vue)]' : 'border border-[color:var(--line)]',
+              ]"
+            />
+          </div>
+          <div class="flex gap-1">
+            <div
+              v-for="i in 5"
+              :key="`p-${i}`"
+              class="h-2 w-3" :class="[
+                i <= player.victories ? 'bg-[color:var(--amber)]' : 'border border-[color:var(--line)]',
+              ]"
+            />
+          </div>
+        </div>
+        <div class="font-mono text-xs text-[color:var(--ink-muted)] truncate mt-0.5">
+          git log --oneline: {{ player.latest }}
+        </div>
+      </div>
     </div>
-    <div :class="['ticker-mono font-bold text-emerald-300 shrink-0', isPodium ? 'text-xl sm:text-3xl' : 'text-base sm:text-xl']">
-      {{ player.points.toLocaleString() }}
+
+    <!-- Score -->
+    <div class="text-right">
+      <div class="font-display text-3xl sm:text-5xl text-[color:var(--vue)] tabular-nums">
+        {{ player.points.toLocaleString() }}
+      </div>
+      <div class="font-mono text-[10px] text-[color:var(--ink-muted)] uppercase tracking-[0.04em]">
+        commit credits
+      </div>
     </div>
   </div>
 </template>

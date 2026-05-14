@@ -1,6 +1,6 @@
 /** Called by a minigame component once the player resolves it. */
 export default defineEventHandler(async (event) => {
-  const body = await readBody<{ codeRef?: string; base?: number }>(event)
+  const body = await readBody<{ codeRef?: string, base?: number }>(event)
   const codeRef = String(body?.codeRef ?? '')
   const base = Number(body?.base ?? 0)
   if (!codeRef || !Number.isFinite(base)) {

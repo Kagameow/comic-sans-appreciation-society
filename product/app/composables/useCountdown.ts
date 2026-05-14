@@ -10,7 +10,10 @@ export function useCountdown(endsAt: MaybeRefOrGetter<number | null>, tickMs = 5
 
   const { pause, resume } = useIntervalFn(() => {
     const target = toValue(endsAt)
-    if (!target) { display.value = ''; return }
+    if (!target) {
+      display.value = ''
+      return
+    }
     const ms = Math.max(0, target - Date.now())
     const m = Math.floor(ms / 60000)
     const s = Math.floor((ms % 60000) / 1000)
@@ -18,8 +21,13 @@ export function useCountdown(endsAt: MaybeRefOrGetter<number | null>, tickMs = 5
   }, tickMs, { immediate: false })
 
   watchEffect(() => {
-    if (toValue(endsAt)) resume()
-    else { pause(); display.value = '' }
+    if (toValue(endsAt)) {
+      resume()
+    }
+    else {
+      pause()
+      display.value = ''
+    }
   })
 
   return display

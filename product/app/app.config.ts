@@ -101,8 +101,8 @@ export default defineAppConfig({
     formField: {
       slots: {
         label: 'font-mono text-xs uppercase tracking-[0.04em] text-[color:var(--ink-muted)]',
-        hint:  'font-mono text-xs text-[color:var(--ink-muted)]',
-        help:  'font-mono text-xs text-[color:var(--ink-muted)]',
+        hint: 'font-mono text-xs text-[color:var(--ink-muted)]',
+        help: 'font-mono text-xs text-[color:var(--ink-muted)]',
         error: 'font-mono text-xs text-[color:var(--red)]',
       },
     },

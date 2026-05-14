@@ -8,7 +8,8 @@ let lastSpawn = 0
 
 function onMove(e: MouseEvent) {
   const now = Date.now()
-  if (now - lastSpawn < 30) return
+  if (now - lastSpawn < 30)
+    return
   lastSpawn = now
 
   hue = (hue + 4) % 360
@@ -17,7 +18,8 @@ function onMove(e: MouseEvent) {
 
   setTimeout(() => {
     const idx = particles.value.findIndex(p => p.id === id)
-    if (idx !== -1) particles.value.splice(idx, 1)
+    if (idx !== -1)
+      particles.value.splice(idx, 1)
   }, 600)
 }
 
@@ -39,8 +41,8 @@ onUnmounted(() => {
       :key="p.id"
       class="trail-dot"
       :style="{
-        left: `${p.x}px`,
-        top: `${p.y}px`,
+        'left': `${p.x}px`,
+        'top': `${p.y}px`,
         '--hue': p.hue,
       }"
     />

@@ -1,18 +1,24 @@
 <template>
-  <div class="rounded-2xl border border-emerald-400/30 bg-white/5 p-10 text-center">
-    <UIcon name="i-lucide-log-in" class="h-12 w-12 mx-auto text-emerald-300 mb-4" />
-    <h2 class="text-2xl font-bold mb-2">Sign in to play</h2>
-    <p class="text-slate-400 mb-6 max-w-md mx-auto">
-      Each migration code you find is logged against your account. Sign in with the
-      email and password your admin gave you to join the leaderboard.
-    </p>
-    <UButton size="lg" color="primary" icon="i-lucide-log-in" to="/login">
-      Sign in
-    </UButton>
-    <p class="text-xs text-slate-500 mt-4">
-      You can still watch the
-      <NuxtLink to="/leaderboard" class="text-emerald-300 hover:underline">Leaderboard</NuxtLink>
-      without signing in.
+  <div class="w-full max-w-[720px] mx-auto bg-[color:var(--surface-deep)] border border-[color:var(--line)] p-5 sm:p-6 font-mono text-sm sm:text-base text-[color:var(--ink-body)] space-y-1">
+    <div><span class="text-[color:var(--vue)]">&gt;</span> git commit -m "VUEGEM1"</div>
+    <div><span class="text-[color:var(--red)]">&gt;</span> fatal: not authenticated</div>
+    <div><span class="text-[color:var(--vue)]">&gt;</span> run <code class="text-[color:var(--vue)]">git auth login</code> to continue</div>
+    <div class="pt-3">
+      <UButton
+        size="lg"
+        color="primary"
+        icon="i-lucide-log-in"
+        to="/login"
+      >
+        git auth login →
+      </UButton>
+    </div>
+    <p class="pt-3 text-xs text-[color:var(--ink-muted)]">
+      &gt; you can watch the
+      <NuxtLink to="/tv" class="text-[color:var(--vue)] hover:underline">
+        pipeline status
+      </NuxtLink>
+      anonymously.
     </p>
   </div>
 </template>

@@ -13,9 +13,9 @@ const { isSignedIn } = useAuthSession()
   <NuxtLink
     v-if="!isSignedIn"
     to="/login"
-    class="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs ticker-mono text-slate-300 hover:text-white hover:bg-white/5 border border-white/10"
+    class="flex items-center gap-1.5 px-2.5 py-1 font-mono uppercase tracking-[0.04em] text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--vue)] hover:border-[color:var(--line-hot)] border border-[color:var(--line)]"
   >
-    <UIcon name="i-lucide-log-in" class="h-3.5 w-3.5" /> Sign in
+    <UIcon name="i-lucide-log-in" class="h-3.5 w-3.5" /> git auth login
   </NuxtLink>
 
   <Suspense v-else>
@@ -23,7 +23,7 @@ const { isSignedIn } = useAuthSession()
     <template #fallback>
       <div
         aria-hidden="true"
-        class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-md border border-white/10 opacity-60"
+        class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 border border-[color:var(--line)] opacity-60"
       >
         <div class="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/10" />
       </div>

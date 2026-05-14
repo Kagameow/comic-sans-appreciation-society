@@ -15,7 +15,8 @@ export async function isAdminRequest(event: H3Event): Promise<boolean> {
 }
 
 export function isAdminEmail(email: string | undefined | null): boolean {
-  if (!email) return false
+  if (!email)
+    return false
   return adminEmails().includes(email.toLowerCase())
 }
 

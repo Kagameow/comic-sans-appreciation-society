@@ -11,7 +11,8 @@ export function useFontMode() {
   }
 
   function syncClass() {
-    if (import.meta.server) return
+    if (import.meta.server)
+      return
     document.documentElement.classList.toggle('font-normal', !isComic.value)
   }
 

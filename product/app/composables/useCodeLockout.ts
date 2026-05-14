@@ -10,21 +10,25 @@ export function useCodeLockout(maxFails = 3, lockMs = 60_000) {
   const locked = computed(() => lockUntil.value !== null)
 
   const { pause, resume } = useIntervalFn(() => {
-    if (!lockUntil.value) return
+    if (!lockUntil.value)
+      return
     const ms = lockUntil.value - Date.now()
-    if (ms <= 0) reset()
+    if (ms <= 0)
+      reset()
     else lockRemain.value = Math.ceil(ms / 1000)
   }, 250, { immediate: false })
 
   watchEffect(() => {
-    if (lockUntil.value) resume()
+    if (lockUntil.value)
+      resume()
     else pause()
   })
 
   function recordFail() {
     const next = fails.value + 1
     fails.value = next
-    if (next >= maxFails) lockUntil.value = Date.now() + lockMs
+    if (next >= maxFails)
+      lockUntil.value = Date.now() + lockMs
   }
 
   function reset() {

@@ -1,3 +1,4 @@
+import { COMPOSABLES } from '#shared/constants/game'
 import type { CodeType } from '#shared/types/game'
 
 // docs/voice.md §5 — the server authors the terminal script for every
@@ -12,8 +13,10 @@ function pointLines(code: string, awarded: number, multiplier: number, composabl
     '> Running test suite...',
     '> ✓ 12 tests passing',
   ]
-  if (composable) lines.push(`> ${composable}() → composable acquired`)
-  if (multiplier > 1) lines.push(`> ⚡ Vite HMR × ${multiplier} applied`)
+  if (composable)
+    lines.push(`> ${composable}() → composable acquired`)
+  if (multiplier > 1)
+    lines.push(`> ⚡ Vite HMR × ${multiplier} applied`)
   lines.push(`> ref(credits).value += ${awarded}`)
   lines.push('> Pushed to origin.')
   return lines
@@ -73,12 +76,14 @@ function superLockedLines() {
 export default defineEventHandler(async (event) => {
   const body = await readBody<{ code?: string }>(event)
   const code = String(body?.code ?? '').trim().toUpperCase()
-  if (!code) throw createError({ statusCode: 400, message: 'code required' })
+  if (!code)
+    throw createError({ statusCode: 400, message: 'code required' })
 
   const player = await requirePlayer(event)
   const repo = useRepo()
   const row = repo.getCode(code)
-  if (!row) return { kind: 'invalid' as const, lines: invalidLines(code) }
+  if (!row)
+    return { kind: 'invalid' as const, lines: invalidLines(code) }
 
   // ─── super code ──────────────────────────────────────────────────────────
   if (row.isSuperCode) {
@@ -123,7 +128,11 @@ export default defineEventHandler(async (event) => {
 
   if (row.type === 'point') {
     const r = repo.redeemPoint(player, row)
-    const composable = r.composableAcquired ?? null
+    // After the redeem, player.gems is the new value — the composable name
+    // that just lit up is at index gems-1 in the canonical order.
+    const composable = r.gemUnlocked && player.gems > 0
+      ? COMPOSABLES[Math.min(player.gems, COMPOSABLES.length) - 1] ?? null
+      : null
     return {
       kind: 'point' as const,
       ...r,

@@ -1,4 +1,4 @@
-export type Player = {
+export interface Player {
   id: string
   name: string
   avatar: string
@@ -16,7 +16,7 @@ export type Player = {
 
 export type CodeType = 'point' | 'trivia' | 'crossword' | 'challenge' | 'victory' | 'super'
 
-export type Code = {
+export interface Code {
   code: string
   type: CodeType
   value: number
@@ -27,7 +27,7 @@ export type Code = {
   usedAt?: number
 }
 
-export type GameConfig = {
+export interface GameConfig {
   multiplier: number
   multiplierEndsAt: number | null
   superCode: string | null
@@ -35,7 +35,7 @@ export type GameConfig = {
   superWonAt: number | null
 }
 
-export type Redemption = {
+export interface Redemption {
   id: string
   playerId: string
   code: string
@@ -45,7 +45,7 @@ export type Redemption = {
   redeemedAt: number
 }
 
-export type ConfigSnapshot = {
+export interface ConfigSnapshot {
   multiplier: number
   multiplierEndsAt: number | null
   superCode: string | null
@@ -53,9 +53,9 @@ export type ConfigSnapshot = {
   superWonAt: number | null
 }
 
-export type SuperEvent = { name: string; at: number } | null
+export type SuperEvent = { name: string, at: number } | null
 
-export type StateSnapshot = {
+export interface StateSnapshot {
   config: ConfigSnapshot
   players: Player[]
   me: Player | null

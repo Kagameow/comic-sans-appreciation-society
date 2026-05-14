@@ -17,33 +17,38 @@ function navigateAfterAuth() {
   navigateTo(dest, { replace: true })
 }
 
-loginForm.$onSuccess(() => { navigateAfterAuth() })
+loginForm.$onSuccess(() => {
+  navigateAfterAuth()
+})
 
-// Already authed (cookie session) — bounce out immediately.
 watchEffect(() => {
-  if (user.value) navigateAfterAuth()
+  if (user.value)
+    navigateAfterAuth()
 })
 </script>
 
 <template>
-  <div class="min-h-screen flex items-center justify-center p-6">
-    <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 shadow-card">
-      <div class="text-center mb-6">
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs ticker-mono mb-4">
-          <UIcon name="i-lucide-shield" class="h-3 w-3" /> architect.login
+  <div class="min-h-screen flex items-center justify-center p-6 bg-[color:var(--bg)]">
+    <div class="w-full max-w-md bg-[color:var(--surface)] border border-[color:var(--line)] p-8 space-y-6">
+      <header class="space-y-2">
+        <div class="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.04em] text-[color:var(--vue)] border border-[color:var(--line)] px-2 py-0.5">
+          <UIcon name="i-lucide-shield" class="h-3 w-3" /> git auth login
         </div>
-        <h1 class="text-3xl font-bold tracking-tight">Sign in</h1>
-        <p class="text-slate-400 text-sm mt-2">
-          Use the email and password your admin gave you.
+        <h1 class="font-display text-3xl text-[color:var(--ink)] uppercase tracking-[0.04em]">
+          authenticate
+        </h1>
+        <p class="font-mono text-xs text-[color:var(--ink-muted)]">
+          email + password your maintainer issued.
         </p>
-      </div>
+      </header>
 
-      <div
+      <UAlert
         v-if="denied"
-        class="mb-4 p-3 rounded-lg border border-amber-400/40 bg-amber-500/10 text-amber-200 text-sm ticker-mono"
-      >
-        ⚠ Your account isn't on the admin allowlist.
-      </div>
+        color="warning"
+        icon="i-lucide-triangle-alert"
+        title="Your account isn't on the maintainer allowlist."
+        description="Sign in with a different account, or play via the contributor terminal."
+      />
 
       <UForm
         :state="loginForm"
@@ -52,7 +57,7 @@ watchEffect(() => {
         @submit="loginForm.$submit()"
         @error="focusFirstError"
       >
-        <UFormField label="Email" name="email">
+        <UFormField label="user.email" name="email">
           <UInput
             v-model="loginForm.email"
             type="email"
@@ -63,7 +68,7 @@ watchEffect(() => {
           />
         </UFormField>
 
-        <UFormField label="Password" name="password">
+        <UFormField label="user.password" name="password">
           <UInput
             v-model="loginForm.password"
             type="password"
@@ -80,24 +85,30 @@ watchEffect(() => {
           color="primary"
           icon="i-lucide-log-in"
           type="submit"
+          class="font-mono"
           :loading="loginForm.$loading"
         >
-          Sign in
+          git auth login →
         </UButton>
 
         <UAlert
           v-if="loginForm.$error"
           color="error"
           icon="i-lucide-circle-x"
-          :title="loginForm.$error.message"
+          title="Breaking change detected"
+          :description="loginForm.$error.message"
         />
       </UForm>
 
-      <p class="mt-6 text-xs text-slate-500 text-center">
-        Only emails listed in <code class="ticker-mono">ADMIN_EMAILS</code> can reach
-        <NuxtLink to="/admin" class="text-emerald-300 hover:underline">/admin</NuxtLink>.
-        Everyone else plays via
-        <NuxtLink to="/" class="text-emerald-300 hover:underline">Code Check</NuxtLink>.
+      <p class="font-mono text-[11px] text-[color:var(--ink-muted)] text-center">
+        only emails in <code class="text-[color:var(--vue)]">ADMIN_EMAILS</code> reach
+        <NuxtLink to="/admin" class="text-[color:var(--vue)] hover:underline">
+          /admin
+        </NuxtLink>.
+        everyone else plays via the
+        <NuxtLink to="/" class="text-[color:var(--vue)] hover:underline">
+          contributor terminal
+        </NuxtLink>.
       </p>
     </div>
   </div>

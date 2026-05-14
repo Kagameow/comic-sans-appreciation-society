@@ -9,7 +9,8 @@
  */
 export default defineNuxtRouteMiddleware(() => {
   const user = useSupabaseUser()
-  if (!user.value) return // module handles the unauth case
+  if (!user.value)
+    return // module handles the unauth case
 
   const allowed = String(useRuntimeConfig().public.adminEmails ?? '')
     .split(',')

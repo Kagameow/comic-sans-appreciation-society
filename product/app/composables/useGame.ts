@@ -27,14 +27,17 @@ export function useGame(intervalMs = 3000) {
 
   const activeMultiplier = computed(() => {
     const c = config.value
-    if (!c.multiplierEndsAt) return 1
-    if (c.multiplierEndsAt < Date.now()) return 1
+    if (!c.multiplierEndsAt)
+      return 1
+    if (c.multiplierEndsAt < Date.now())
+      return 1
     return c.multiplier
   })
   const isMultiplierActive = computed(() => activeMultiplier.value > 1)
   const clueUnlocked = computed(() => {
     const m = me.value
-    if (!m) return false
+    if (!m)
+      return false
     return m.victories >= TOTAL_VICTORIES || m.gems >= TOTAL_GEMS
   })
   const sortedPlayers = computed(() => [...players.value].sort((a, b) => b.points - a.points))
@@ -46,7 +49,8 @@ export function useGame(intervalMs = 3000) {
     { immediate: false },
   )
   watchEffect(() => {
-    if (visibility.value === 'visible') resume()
+    if (visibility.value === 'visible')
+      resume()
     else pause()
   })
 

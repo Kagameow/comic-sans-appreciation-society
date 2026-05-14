@@ -1,11 +1,3 @@
-<template>
-  <div class="marquee-bar">
-    <marquee scrollamount="3">
-      <span v-for="i in 3" :key="i">{{ text }}</span>
-    </marquee>
-  </div>
-</template>
-
 <script setup lang="ts">
 const messages = [
   'This site best viewed in Netscape Navigator 4.0 at 800x600',
@@ -21,8 +13,16 @@ const messages = [
   '▲ ▲ ▲ · Claude can\'t into vue3force',
 ]
 
-const text = messages.join(' ♥ ') + ' ♥ '
+const text = `${messages.join(' ♥ ')} ♥ `
 </script>
+
+<template>
+  <div class="marquee-bar">
+    <marquee scrollamount="3">
+      <span v-for="i in 3" :key="i">{{ text }}</span>
+    </marquee>
+  </div>
+</template>
 
 <style scoped>
 .marquee-bar {

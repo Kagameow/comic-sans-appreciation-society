@@ -2,18 +2,33 @@
 const game = useGame()
 const { isComic, toggle: toggleFont } = useFontMode()
 const colorMode = useColorMode()
+const route = useRoute()
 const navOpen = ref(false)
 
 const isDark = computed({
   get: () => colorMode.value === 'dark',
   set: (v) => { colorMode.preference = v ? 'dark' : 'light' },
 })
+
+// /tv switches the document into tv-mode (10-foot UI per design-system §3.2).
+// The class drives base font-size + scanline opacity in main.css.
+watchEffect(() => {
+  if (import.meta.server)
+    return
+  document.documentElement.classList.toggle('tv-mode', route.path === '/tv' || route.path === '/leaderboard')
+})
+
+// Header is suppressed entirely on /tv — the TV view is its own world.
+const showHeader = computed(() => route.path !== '/tv' && route.path !== '/leaderboard')
 </script>
 
 <template>
-  <div :class="['min-h-screen', game.isMultiplierActive ? 'multiplier-glow' : '']">
-    <header class="border-b border-white/10 bg-white/5 backdrop-blur sticky top-0 z-40">
-      <div class="container mx-auto max-w-6xl px-3 sm:px-6 flex h-16 items-center justify-between gap-2 sm:gap-6">
+  <div class="min-h-screen" :class="[game.isMultiplierActive && showHeader ? 'multiplier-glow' : '']">
+    <header
+      v-if="showHeader"
+      class="border-b border-[color:var(--line)] bg-[color:var(--surface)]/80 backdrop-blur sticky top-0 z-40"
+    >
+      <div class="container mx-auto max-w-6xl px-3 sm:px-6 flex h-14 items-center justify-between gap-2 sm:gap-6">
         <div class="flex items-center gap-2 min-w-0">
           <UButton
             class="md:hidden"
@@ -32,7 +47,7 @@ const isDark = computed({
             variant="ghost"
             color="neutral"
             size="sm"
-            :title="isComic ? 'Switch to boring font' : 'Switch to fun font'"
+            :title="isComic ? 'Switch to system font' : 'Switch to comic font'"
             @click="toggleFont"
           >
             <span class="text-lg leading-none">{{ isComic ? '🎨' : '📝' }}</span>

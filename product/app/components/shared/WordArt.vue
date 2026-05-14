@@ -16,8 +16,7 @@ withDefaults(defineProps<Props>(), {
 <template>
   <component
     :is="tag"
-    :class="[
-      'wordart',
+    class="wordart" :class="[
       `wordart--${size}`,
       { 'wordart--arc': arc },
     ]"

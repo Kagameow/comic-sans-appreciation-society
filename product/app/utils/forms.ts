@@ -8,7 +8,8 @@ import type { FormErrorEvent } from '#ui/types'
  */
 export function focusFirstError(event: FormErrorEvent) {
   const firstId = event.errors[0]?.id
-  if (!firstId) return
+  if (!firstId)
+    return
   const el = document.getElementById(firstId)
   el?.focus()
   el?.scrollIntoView({ behavior: 'smooth', block: 'center' })

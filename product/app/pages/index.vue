@@ -2,9 +2,21 @@
 const game = useGame()
 const { isSignedIn } = useAuthSession()
 const redeem = useCodeRedeem()
+const term = useTerminalBus()
 
-const filledGems = computed(() => Math.max(game.me?.gems ?? 0, game.me?.victories ?? 0))
-const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
+const showClueCard = computed(() => game.clueUnlocked && !game.superWinner)
+
+// docs/voice.md §5.1 — boot lines fire once on first arrival (signed in).
+onMounted(() => {
+  if (!isSignedIn.value || term.lines.value.length)
+    return
+  for (const text of [
+    '> Initializing Vue 3 migration...',
+    '> Scanning office for deploy keys...',
+    '> Migration window: 09:00 – 18:00',
+    '> All contributors must reach main before sunset',
+  ]) term.line(text, 'vue')
+})
 </script>
 
 <template>
@@ -14,13 +26,19 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
 
       <template v-else-if="redeem.mode.value === 'input'">
         <RedeemHeroBanner />
-        <RedeemGemsTracker :filled="filledGems" />
-
-        <RedeemClueCta v-if="showClueCta" @click="redeem.showClueModal.value = true" />
 
         <RedeemCodeInput :lockout="redeem.lockout" @submit="redeem.submit" />
+        <RedeemTerminal />
 
         <RedeemAwardFlash v-if="redeem.flash.value" v-bind="redeem.flash.value" />
+
+        <RedeemGemsTracker
+          class="mt-10"
+          :composables="game.me?.gems ?? 0"
+          :victories="game.me?.victories ?? 0"
+        />
+
+        <RedeemClueCta v-if="showClueCard" />
       </template>
 
       <RedeemMinigameHost

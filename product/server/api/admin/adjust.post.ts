@@ -1,7 +1,7 @@
-
 export default defineEventHandler(async (event) => {
-  if (!(await isAdminRequest(event))) throw createError({ statusCode: 403, message: 'admin only' })
-  const body = await readBody<{ playerId?: string; delta?: number }>(event)
+  if (!(await isAdminRequest(event)))
+    throw createError({ statusCode: 403, message: 'admin only' })
+  const body = await readBody<{ playerId?: string, delta?: number }>(event)
   const playerId = String(body?.playerId ?? '')
   const delta = Number(body?.delta ?? 0)
   if (!playerId || !Number.isFinite(delta)) {
@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
   }
   const repo = useRepo()
   const player = repo.adjustPoints(playerId, Math.max(-1000, Math.min(1000, delta)))
-  if (!player) throw createError({ statusCode: 404, message: 'unknown player' })
+  if (!player)
+    throw createError({ statusCode: 404, message: 'unknown player' })
   return { ok: true, player }
 })

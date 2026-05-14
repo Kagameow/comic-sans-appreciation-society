@@ -1,7 +1,8 @@
 import confetti from 'canvas-confetti'
 
 export function confettiBurst(overrides: confetti.Options = {}) {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined')
+    return
   confetti({
     particleCount: 120,
     spread: 80,
@@ -12,12 +13,15 @@ export function confettiBurst(overrides: confetti.Options = {}) {
 }
 
 export function confettiSuperBurst() {
-  if (typeof window === 'undefined') return
+  if (typeof window === 'undefined')
+    return
   const opts = {
-    particleCount: 220, spread: 140, origin: { y: 0.3 },
+    particleCount: 220,
+    spread: 140,
+    origin: { y: 0.3 },
     colors: ['#42b883', '#FFD700', '#FEFA7C', '#ffffff'],
   }
   confetti(opts)
-  setTimeout(() => confetti(opts), 400)
-  setTimeout(() => confetti(opts), 800)
+  setTimeout(confetti, 400, opts)
+  setTimeout(confetti, 800, opts)
 }

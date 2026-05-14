@@ -1,9 +1,13 @@
 <template>
-  <div>
-    <div class="text-xs uppercase tracking-widest text-emerald-300 mb-1">Architect View</div>
-    <h1 class="text-3xl sm:text-4xl font-bold">Admin Dashboard</h1>
-    <p class="text-xs text-amber-300 mt-2 ticker-mono">
-      ⚠ POC: admin routes are unguarded until Supabase auth is wired
+  <header class="space-y-1">
+    <div class="font-mono text-[11px] uppercase tracking-[0.04em] text-[color:var(--vue)]">
+      maintainer console · root@migration
+    </div>
+    <h1 class="font-display text-3xl sm:text-4xl text-[color:var(--ink)] uppercase tracking-[0.04em]">
+      mission control
+    </h1>
+    <p class="font-mono text-xs text-[color:var(--ink-muted)]">
+      no confirmations. every reversible action gets a 5-second undo toast.
     </p>
-  </div>
+  </header>
 </template>

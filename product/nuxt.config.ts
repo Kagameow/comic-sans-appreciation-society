@@ -29,9 +29,9 @@ export default defineNuxtConfig({
       subsets: ['latin', 'latin-ext'],
     },
     families: [
-      { name: 'VT323',           weights: [400],           provider: 'google' },
-      { name: 'Share Tech Mono', weights: [400],           provider: 'google' },
-      { name: 'IBM Plex Mono',   weights: [400, 500, 600], provider: 'google' },
+      { name: 'VT323', weights: [400], provider: 'google' },
+      { name: 'Share Tech Mono', weights: [400], provider: 'google' },
+      { name: 'IBM Plex Mono', weights: [400, 500, 600], provider: 'google' },
     ],
   },
 
@@ -72,6 +72,7 @@ export default defineNuxtConfig({
     public: {
       // Whitelist surfaced to the client so the admin route middleware can
       // gate before any API call. Emails are not secrets.
+      // eslint-disable-next-line node/prefer-global/process
       adminEmails: process.env.ADMIN_EMAILS ?? '',
     },
   },

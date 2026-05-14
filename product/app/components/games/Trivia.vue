@@ -1,4 +1,6 @@
 <script setup lang="ts">
+// docs/refactor-plan.md §5 — trivia reframed as an RFC the contributor
+// reviews. "Approve RFC →" picks the answer; time-decay still applies.
 const props = defineProps<{
   question: string
   answers: string[]
@@ -12,14 +14,16 @@ const elapsed = ref(0)
 const picked = ref<number | null>(null)
 
 useIntervalFn(() => {
-  if (picked.value === null) elapsed.value += 0.1
+  if (picked.value === null)
+    elapsed.value += 0.1
 }, 100)
 
 const remaining = computed(() => Math.max(0, TOTAL - elapsed.value))
 const pct = computed(() => (remaining.value / TOTAL) * 100)
 const points = computed(() => remaining.value > 13 ? 100 : remaining.value > 6 ? 50 : 10)
-const barColor = computed(() => remaining.value > 13 ? 'bg-emerald-500' : remaining.value > 6 ? 'bg-amber-300' : 'bg-rose-500')
-const textColor = computed(() => remaining.value > 13 ? 'text-emerald-400' : remaining.value > 6 ? 'text-amber-300' : 'text-rose-400')
+const barColor = computed(() => remaining.value > 13 ? 'bg-[color:var(--vue)]' : remaining.value > 6 ? 'bg-[color:var(--amber)]' : 'bg-[color:var(--red)]')
+
+const rfcNumber = useState('rfc-trivia', () => Math.floor(Math.random() * 900 + 100))
 
 function pick(i: number) {
   picked.value = i
@@ -29,30 +33,46 @@ function pick(i: number) {
 </script>
 
 <template>
-  <div class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-card">
-    <div class="flex items-center justify-between mb-2">
-      <span class="text-xs uppercase tracking-widest text-slate-400">Trivia · Time Decay</span>
-      <span :class="['ticker-mono font-bold text-2xl', textColor]">+{{ points }}</span>
-    </div>
-    <div class="h-2 rounded-full bg-white/5 overflow-hidden mb-6">
-      <div :class="['h-full transition-all', barColor]" :style="{ width: `${pct}%` }" />
+  <div class="bg-[color:var(--surface)] border border-[color:var(--line)] p-6 sm:p-8">
+    <header class="flex items-center justify-between mb-2">
+      <div class="font-mono text-[11px] uppercase tracking-[0.04em] text-[color:var(--vue)]">
+        RFC #{{ rfcNumber }} · trivia review
+      </div>
+      <div class="font-mono text-xs text-[color:var(--amber)] tabular-nums">
+        merging in 00:{{ Math.ceil(remaining).toString().padStart(2, '0') }} · +{{ points }} credits
+      </div>
+    </header>
+
+    <div class="h-1.5 bg-[color:var(--surface-deep)] overflow-hidden mb-6">
+      <div class="h-full transition-all" :class="[barColor]" :style="{ width: `${pct}%` }" />
     </div>
 
-    <h2 class="text-2xl font-semibold mb-6">{{ question }}</h2>
+    <h2 class="font-display text-2xl sm:text-3xl text-[color:var(--ink)] mb-6 leading-tight">
+      {{ question }}
+    </h2>
 
-    <div class="grid sm:grid-cols-2 gap-3">
+    <div class="grid sm:grid-cols-2 gap-2 mb-4">
       <UButton
         v-for="(a, i) in answers"
         :key="i"
         :disabled="picked !== null"
         :color="picked !== null && i === correctIdx ? 'success' : picked === i ? 'error' : 'neutral'"
-        variant="soft"
+        variant="outline"
         block
-        class="!justify-start text-left px-4 py-3 rounded-lg border h-auto transition-all"
+        class="!justify-start text-left px-4 py-3 h-auto font-mono"
         @click="pick(i)"
       >
-        <span class="ticker-mono text-xs text-slate-400 mr-2">{{ String.fromCharCode(65 + i) }}</span>
+        <span class="text-[color:var(--ink-muted)] mr-2">{{ String.fromCharCode(65 + i) }}.</span>
         {{ a }}
+      </UButton>
+    </div>
+
+    <div class="flex gap-2">
+      <UButton size="sm" color="primary" :disabled="picked !== null" class="font-mono">
+        Approve RFC →
+      </UButton>
+      <UButton size="sm" variant="outline" color="error" :disabled="picked !== null" class="font-mono" @click="emit('resolve', 0)">
+        Request changes
       </UButton>
     </div>
   </div>

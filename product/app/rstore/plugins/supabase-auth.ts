@@ -7,7 +7,8 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
 
 function toCurrentUser(user: User | null) {
-  if (!user) return undefined
+  if (!user)
+    return undefined
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   return {
     id: user.id,
@@ -30,13 +31,15 @@ export default defineRstorePlugin({
     const nuxtApp = useNuxtApp()
     function getSupabase(): SupabaseClient {
       const $supabase = (nuxtApp as { $supabase?: { client: SupabaseClient } }).$supabase
-      if (!$supabase?.client) throw new Error('Supabase client not initialised — is @nuxtjs/supabase loaded?')
+      if (!$supabase?.client)
+        throw new Error('Supabase client not initialised — is @nuxtjs/supabase loaded?')
       return $supabase.client
     }
 
     hook('fetchFirst', async (payload) => {
       const name = payload.collection.name
-      if (name !== 'session' && name !== 'currentUser') return
+      if (name !== 'session' && name !== 'currentUser')
+        return
       const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (name === 'session') {
@@ -47,26 +50,32 @@ export default defineRstorePlugin({
     })
 
     hook('createItem', async (payload) => {
-      if (payload.collection.name !== 'session') return
+      if (payload.collection.name !== 'session')
+        return
       const supabase = getSupabase()
-      const { email, password } = payload.item as { email: string; password: string }
+      const { email, password } = payload.item as { email: string, password: string }
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw new Error(error.message)
+      if (error)
+        throw new Error(error.message)
       payload.setResult({ id: 'current' })
     })
 
     hook('updateItem', async (payload) => {
-      if (payload.collection.name !== 'currentUser') return
+      if (payload.collection.name !== 'currentUser')
+        return
       const supabase = getSupabase()
       const patch = payload.item as Partial<{ display_name: string, avatar_url: string | null }>
       const { data, error } = await supabase.auth.updateUser({ data: patch })
-      if (error) throw new Error(error.message)
+      if (error)
+        throw new Error(error.message)
       const next = toCurrentUser(data.user)
-      if (next) payload.setResult(next)
+      if (next)
+        payload.setResult(next)
     })
 
     hook('deleteItem', async (payload) => {
-      if (payload.collection.name !== 'session') return
+      if (payload.collection.name !== 'session')
+        return
       const supabase = getSupabase()
       await supabase.auth.signOut()
     })
