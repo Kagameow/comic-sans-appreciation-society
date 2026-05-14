@@ -17,6 +17,7 @@ const messages = [
   'Vlada\'s longest office visit: 5 min. Purpose: telling Tom we\'re switching to React. Worth it.',
   'All your codebase are belong to Evan You',
   'Vue 3.5 \'Tengen Toppa Gurren Lagann\' · Vue 3.2 \'Quintessential Quintuplets\' · Vue 3.0 \'One Piece\' · yes these are real release names · yes Evan You is a weeb',
+  'this <marquee> has more useful comments than devin leaves at code for $8000/month · and it\'s a deprecated HTML tag',
   '▲ ▲ ▲ · Claude can\'t into vue3force',
 ]
 
