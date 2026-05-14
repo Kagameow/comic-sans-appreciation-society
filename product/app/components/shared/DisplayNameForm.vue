@@ -39,7 +39,7 @@ nameForm.$onSuccess(() => {
 </script>
 
 <template>
-  <form @submit.prevent="nameForm()">
+  <form @submit.prevent="nameForm.$submit()">
     <UFormField label="Display name">
       <div class="flex gap-2">
         <UInput

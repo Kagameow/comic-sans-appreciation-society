@@ -32,7 +32,7 @@ const codeForm = createFormObject({
 <template>
   <div class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-card relative overflow-hidden">
     <div v-if="lockout.locked.value" class="absolute inset-0 animate-shimmer pointer-events-none" />
-    <form class="flex flex-col sm:flex-row gap-3" @submit.prevent="codeForm()">
+    <form class="flex flex-col sm:flex-row gap-3" @submit.prevent="codeForm.$submit()">
       <input
         ref="inputEl"
         :value="codeForm.code"

@@ -87,7 +87,7 @@ async function onFilePicked(e: Event) {
   avatarForm.file = file
 
   try {
-    await avatarForm()
+    await avatarForm.$submit()
     if (avatarForm.$error) {
       clearPreview()
       flashError(avatarForm.$error.message)
