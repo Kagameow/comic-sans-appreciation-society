@@ -2,6 +2,8 @@ export type Player = {
   id: string
   name: string
   avatar: string
+  /** Public URL to an uploaded avatar image. Wins over `avatar` (emoji) when set. */
+  avatarUrl?: string
   points: number
   victories: number
   gems: number

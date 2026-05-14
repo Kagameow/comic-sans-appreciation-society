@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = await useGameSync()
+const game = useGame()
 const { isSignedIn } = useAuthSession()
 const redeem = useCodeRedeem()
 
@@ -9,7 +9,7 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
 
 <template>
   <div>
-    <div class="container mx-auto max-w-3xl px-6 py-12">
+    <div class="container mx-auto max-w-3xl px-3 sm:px-6 py-6 sm:py-12">
       <RedeemSignInGate v-if="!isSignedIn" />
 
       <template v-else-if="redeem.mode.value === 'input'">
@@ -30,7 +30,7 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
       />
     </div>
 
-    <RedeemMasterClueModal v-if="redeem.showClueModal.value" @close="redeem.showClueModal.value = false" />
+    <RedeemMasterClueModal v-model:open="redeem.showClueModal.value" />
     <RedeemSuperWinOverlay v-if="redeem.showSuperWin.value" @dismiss="redeem.showSuperWin.value = false" />
   </div>
 </template>
