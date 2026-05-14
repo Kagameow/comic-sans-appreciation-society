@@ -5,5 +5,6 @@
       <NuxtPage />
     </NuxtLayout>
     <SharedMarqueeTicker />
+    <SharedCursorTrail />
   </UApp>
 </template>
