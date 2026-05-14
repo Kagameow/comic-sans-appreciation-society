@@ -30,6 +30,7 @@
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^25.7.0",
+    "sass-embedded": "^1.99.0",
     "typescript": "^5.6.0",
     "vue-tsc": "^3.2.8"
   }
