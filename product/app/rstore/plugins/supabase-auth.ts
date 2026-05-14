@@ -49,10 +49,14 @@ export default defineRstorePlugin({
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
       if (next) payload.setResult(next)
-      // @nuxtjs/supabase only refreshes useSupabaseUser() on auth-state
-      // changes whose session JSON differs — that's not guaranteed for
-      // a metadata-only update. Re-fetch claims explicitly so every
-      // consumer reading user.value sees the new metadata immediately.
+      // updateUser updates session.user server-side + locally but does NOT
+      // re-mint the access token — the local JWT still carries the old
+      // user_metadata. getClaims() decodes that stale JWT, so without a
+      // refresh, useSupabaseUser() consumers (PlayerBadge avatar/name,
+      // AvatarUploader preview) keep showing pre-update values. Refresh
+      // the session first so the new metadata is in the JWT, then pull
+      // fresh claims and push them into the reactive ref.
+      await supabase.auth.refreshSession()
       const { data: claimsData } = await supabase.auth.getClaims()
       const userRef = useSupabaseUser()
       userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
