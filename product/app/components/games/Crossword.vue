@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import * as v from 'valibot'
+import { createFormObject } from '@rstore/vue'
+
 const emit = defineEmits<{ (e: 'solve', points: number): void }>()
 
 const ANSWERS = [
@@ -19,36 +22,69 @@ const active = computed(() => {
   return m
 })
 
-const grid = ref<string[][]>(Array.from({ length: SIZE }, () => Array(SIZE).fill('')))
+const schema = v.object({
+  grid: v.pipe(
+    v.array(v.array(v.string())),
+    v.check((rows) => {
+      for (const a of ANSWERS) {
+        for (let i = 0; i < a.word.length; i++) {
+          const cell = a.dir === 'across' ? rows[a.row]?.[a.col + i] : rows[a.row + i]?.[a.col]
+          if (!cell) return false
+        }
+      }
+      return true
+    }, 'Fill in every active cell'),
+  ),
+})
 
-const filled = computed(() =>
-  grid.value.every((row, r) => row.every((c, ci) => !active.value[r]![ci] || c.length > 0)),
-)
+const crosswordForm = createFormObject({
+  defaultValues: () => ({
+    grid: Array.from({ length: SIZE }, () => Array(SIZE).fill('') as string[]),
+  }),
+  schema,
+  async submit() {
+    emit('solve', 75)
+  },
+  resetOnSuccess: false,
+})
 
-function update(r: number, c: number, v: string) {
-  const ch = v.toUpperCase().slice(-1)
-  grid.value[r]![c] = ch
+const grid = computed(() => crosswordForm.grid ?? [])
+
+function update(r: number, c: number, raw: string) {
+  const ch = raw.toUpperCase().slice(-1)
+  if (!crosswordForm.grid) return
+  crosswordForm.grid[r]![c] = ch
 }
 </script>
 
 <template>
-  <div class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-card">
+  <UForm
+    :state="crosswordForm"
+    :schema="crosswordForm.$schema"
+    class="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-card"
+    @submit="crosswordForm.$submit()"
+    @error="focusFirstError"
+  >
     <div class="text-xs uppercase tracking-widest text-slate-400 mb-4">Crossword · Vue 3</div>
     <div class="grid md:grid-cols-2 gap-8">
-      <div class="grid gap-1.5" :style="`grid-template-columns: repeat(${SIZE}, minmax(0,1fr))`">
-        <template v-for="(row, r) in grid" :key="r">
-          <template v-for="(cell, c) in row" :key="`${r}-${c}`">
-            <input
-              v-if="active[r]?.[c]"
-              :value="cell"
-              maxlength="1"
-              class="aspect-square w-full text-center font-bold text-lg uppercase rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 ticker-mono"
-              @input="(e) => update(r, c, (e.target as HTMLInputElement).value)"
-            />
-            <div v-else class="aspect-square w-full rounded-md bg-white/5" />
+      <UFormField name="grid">
+        <div class="grid gap-1.5" :style="`grid-template-columns: repeat(${SIZE}, minmax(0,1fr))`">
+          <template v-for="(row, r) in grid" :key="r">
+            <template v-for="(cell, c) in row" :key="`${r}-${c}`">
+              <UInput
+                v-if="active[r]?.[c]"
+                :model-value="cell"
+                :maxlength="1"
+                size="lg"
+                class="aspect-square w-full"
+                :ui="{ base: 'text-center font-bold uppercase ticker-mono' }"
+                @update:model-value="update(r, c, String($event ?? ''))"
+              />
+              <div v-else class="aspect-square w-full rounded-md bg-white/5" />
+            </template>
           </template>
-        </template>
-      </div>
+        </div>
+      </UFormField>
       <div>
         <h3 class="font-semibold mb-2">Across</h3>
         <ul class="space-y-2 text-sm text-slate-400">
@@ -61,12 +97,20 @@ function update(r: number, c: number, v: string) {
           block
           color="primary"
           class="mt-6"
-          :disabled="!filled"
-          @click="emit('solve', 75)"
+          type="submit"
+          :disabled="!crosswordForm.$valid"
+          :loading="crosswordForm.$loading"
         >
           Submit Crossword
         </UButton>
+        <UAlert
+          v-if="crosswordForm.$error"
+          color="error"
+          icon="i-lucide-circle-x"
+          :title="crosswordForm.$error.message"
+          class="mt-2"
+        />
       </div>
     </div>
-  </div>
+  </UForm>
 </template>

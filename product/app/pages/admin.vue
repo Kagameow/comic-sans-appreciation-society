@@ -1,7 +1,5 @@
 <script setup lang="ts">
 definePageMeta({ middleware: 'admin' })
-
-useGame()
 </script>
 
 <template>

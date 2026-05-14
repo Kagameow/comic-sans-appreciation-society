@@ -26,9 +26,12 @@ const confirmForm = createFormObject({
 </script>
 
 <template>
-  <form
+  <UForm
+    :state="confirmForm"
+    :schema="confirmForm.$schema"
     class="rounded-2xl border border-emerald-400/30 bg-white/5 p-8 glow-green"
-    @submit.prevent="confirmForm()"
+    @submit="confirmForm.$submit()"
+    @error="focusFirstError"
   >
     <div class="text-xs uppercase tracking-widest text-emerald-300 mb-3">⚔ IRL Challenge</div>
     <h2 class="text-3xl font-bold leading-tight mb-2">
@@ -36,7 +39,7 @@ const confirmForm = createFormObject({
     </h2>
     <p class="text-xl text-slate-400 mb-8">…and beat them at {{ activity }}!</p>
 
-    <UFormField label="Referee Confirmation Code" class="mt-2">
+    <UFormField label="Referee Confirmation Code" name="code" class="mt-2">
       <div class="flex gap-2">
         <UInput
           :model-value="confirmForm.code"
@@ -57,12 +60,16 @@ const confirmForm = createFormObject({
         </UButton>
       </div>
     </UFormField>
-    <p v-if="confirmForm.$error" class="text-xs text-rose-400 ticker-mono mt-2">
-      {{ confirmForm.$error.message }}
-    </p>
+    <UAlert
+      v-if="confirmForm.$error"
+      color="error"
+      icon="i-lucide-circle-x"
+      :title="confirmForm.$error.message"
+      class="mt-2"
+    />
     <p class="text-xs text-slate-500 mt-3">
       POC: any 4+ char code resolves the win. The real version checks against
       a referee-issued single-use code.
     </p>
-  </form>
+  </UForm>
 </template>

@@ -37,15 +37,18 @@ const minutesLeft = computed(() => {
       </UButton>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-      <button
+      <UButton
         v-for="b in options"
         :key="b.n"
-        class="px-4 py-4 rounded-xl border border-white/10 bg-white/[0.04] hover:border-emerald-400 hover:bg-emerald-500/10 transition text-left"
+        variant="soft"
+        color="neutral"
+        block
+        class="!flex-col !items-start !justify-start text-left px-4 py-4 rounded-xl border border-white/10 bg-white/[0.04] hover:border-emerald-400 hover:bg-emerald-500/10 transition h-auto"
         @click="admin.setMultiplier(b.n, b.min)"
       >
         <div class="ticker-mono text-2xl font-bold text-emerald-300">{{ b.n }}x</div>
         <div class="text-xs text-slate-400 mt-1">{{ b.label }} · {{ b.min }}min</div>
-      </button>
+      </UButton>
     </div>
   </section>
 </template>

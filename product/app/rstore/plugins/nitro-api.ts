@@ -8,6 +8,7 @@ import type { StateSnapshot } from '#shared/types/game'
 
 export default defineRstorePlugin({
   name: 'nitro-api',
+  category: 'remote',
   setup({ hook }) {
     hook('fetchFirst', async (payload) => {
       if (payload.collection.name !== 'gameState') return
