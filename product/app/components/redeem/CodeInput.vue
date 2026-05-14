@@ -32,16 +32,24 @@ const codeForm = createFormObject({
 <template>
   <div class="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-card relative overflow-hidden">
     <div v-if="lockout.locked.value" class="absolute inset-0 animate-shimmer pointer-events-none" />
-    <form class="flex flex-col sm:flex-row gap-3" @submit.prevent="codeForm.$submit()">
-      <input
-        ref="inputEl"
-        :value="codeForm.code"
-        :disabled="lockout.locked.value"
-        autofocus
-        :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
-        class="flex-1 min-w-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
-        @input="codeForm.code = ((($event.target as HTMLInputElement).value) || '').toUpperCase()"
-      />
+    <UForm
+      :state="codeForm"
+      :schema="codeForm.$schema"
+      class="flex flex-col sm:flex-row gap-3"
+      @submit="codeForm.$submit()"
+      @error="focusFirstError"
+    >
+      <UFormField name="code" class="flex-1 min-w-0">
+        <input
+          ref="inputEl"
+          :value="codeForm.code"
+          :disabled="lockout.locked.value"
+          autofocus
+          :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
+          class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
+          @input="codeForm.code = ((($event.target as HTMLInputElement).value) || '').toUpperCase()"
+        />
+      </UFormField>
       <UButton
         type="submit"
         size="lg"
@@ -53,7 +61,7 @@ const codeForm = createFormObject({
       >
         Submit
       </UButton>
-    </form>
+    </UForm>
 
     <div class="mt-4 flex items-center justify-between text-sm">
       <div class="text-slate-400">

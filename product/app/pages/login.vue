@@ -45,7 +45,13 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <form class="space-y-4" @submit.prevent="loginForm.$submit()">
+      <UForm
+        :state="loginForm"
+        :schema="loginForm.$schema"
+        class="space-y-4"
+        @submit="loginForm.$submit()"
+        @error="focusFirstError"
+      >
         <UFormField label="Email" name="email">
           <UInput
             v-model="loginForm.email"
@@ -78,11 +84,14 @@ watchEffect(() => {
         >
           Sign in
         </UButton>
-      </form>
 
-      <div v-if="loginForm.$error" class="mt-4 text-sm text-rose-400 ticker-mono text-center">
-        {{ loginForm.$error.message }}
-      </div>
+        <UAlert
+          v-if="loginForm.$error"
+          color="error"
+          icon="i-lucide-circle-x"
+          :title="loginForm.$error.message"
+        />
+      </UForm>
 
       <p class="mt-6 text-xs text-slate-500 text-center">
         Only emails listed in <code class="ticker-mono">ADMIN_EMAILS</code> can reach

@@ -46,9 +46,9 @@ const avatarSchema = v.object({
 })
 
 const avatarForm = createFormObject({
-  defaultValues: () => ({ file: null as File | null }),
+  defaultValues: () => ({ file: undefined as File | undefined }),
   schema: avatarSchema,
-  async submit(values): Promise<{ file: File | null }> {
+  async submit(values): Promise<void> {
     if (!user.value || !values.file) throw new Error('Not signed in')
     const uid = user.value.id
     const ext = values.file.name.split('.').pop()?.toLowerCase() || 'png'
@@ -59,7 +59,6 @@ const avatarForm = createFormObject({
     if (upErr) throw new Error(upErr.message)
     const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
     await store.currentUser.update({ avatar_url: pub.publicUrl }, { key: uid })
-    return { file: values.file }
   },
   resetOnSuccess: true,
 })
@@ -109,8 +108,13 @@ watch(() => avatarForm.file, (f) => {
       <div class="p-3 w-72 space-y-3">
         <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
 
-        <form @submit.prevent="nameForm.$submit()">
-          <UFormField label="Display name">
+        <UForm
+          :state="nameForm"
+          :schema="nameForm.$schema"
+          @submit="nameForm.$submit()"
+          @error="focusFirstError"
+        >
+          <UFormField label="Display name" name="display_name">
             <div class="flex gap-2">
               <UInput
                 v-model="nameForm.display_name"
@@ -129,13 +133,21 @@ watch(() => avatarForm.file, (f) => {
               </UButton>
             </div>
           </UFormField>
-          <p v-if="nameForm.$error" class="mt-1 text-xs text-rose-400 ticker-mono">
-            {{ nameForm.$error.message }}
-          </p>
-        </form>
+          <UAlert
+            v-if="nameForm.$error"
+            color="error"
+            icon="i-lucide-circle-x"
+            :title="nameForm.$error.message"
+            class="mt-1"
+          />
+        </UForm>
 
-        <div>
-          <UFormField label="Avatar">
+        <UForm
+          :state="avatarForm"
+          :schema="avatarForm.$schema"
+          @submit="avatarForm.$submit()"
+        >
+          <UFormField label="Avatar" name="file">
             <UFileUpload
               v-model="avatarForm.file"
               accept="image/*"
@@ -145,10 +157,14 @@ watch(() => avatarForm.file, (f) => {
               :disabled="avatarForm.$loading"
             />
           </UFormField>
-          <p v-if="avatarForm.$error" class="mt-1 text-xs text-rose-400 ticker-mono">
-            {{ avatarForm.$error.message }}
-          </p>
-        </div>
+          <UAlert
+            v-if="avatarForm.$error"
+            color="error"
+            icon="i-lucide-circle-x"
+            :title="avatarForm.$error.message"
+            class="mt-1"
+          />
+        </UForm>
 
         <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
         <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
