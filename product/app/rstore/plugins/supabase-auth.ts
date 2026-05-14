@@ -21,14 +21,17 @@ export default defineRstorePlugin({
   name: 'supabase-auth',
   category: 'remote',
   setup({ hook }) {
-    // Capture the Nuxt app at plugin install (rstore boots inside Nuxt's
-    // app context). Re-entering the context via runWithContext is what keeps
-    // useSupabaseClient() working from inside async rstore hooks — without
-    // it, the composable throws "called outside of a plugin / setup fn" once
-    // the await tick has erased the implicit Vue context.
+    // Capture nuxtApp at install (rstore boots inside Nuxt's app context)
+    // and reach for $supabase.client directly. useSupabaseClient() relies on
+    // useNuxtApp() resolving the current async context — and that context is
+    // gone by the time an rstore hook's await tick resumes, so the composable
+    // returns undefined and `supabase.auth.getUser()` blows up. Direct read
+    // off the captured app is stable across awaits.
     const nuxtApp = useNuxtApp()
     function getSupabase(): SupabaseClient {
-      return nuxtApp.runWithContext(() => useSupabaseClient()) as SupabaseClient
+      const $supabase = (nuxtApp as { $supabase?: { client: SupabaseClient } }).$supabase
+      if (!$supabase?.client) throw new Error('Supabase client not initialised — is @nuxtjs/supabase loaded?')
+      return $supabase.client
     }
 
     hook('fetchFirst', async (payload) => {
@@ -55,7 +58,7 @@ export default defineRstorePlugin({
     hook('updateItem', async (payload) => {
       if (payload.collection.name !== 'currentUser') return
       const supabase = getSupabase()
-      const patch = payload.item as Partial<{ display_name: string; avatar_url: string | null }>
+      const patch = payload.item as Partial<{ display_name: string, avatar_url: string | null }>
       const { data, error } = await supabase.auth.updateUser({ data: patch })
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
