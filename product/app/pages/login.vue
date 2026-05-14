@@ -53,7 +53,7 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <form class="space-y-4" @submit.prevent="loginForm()">
+      <form class="space-y-4" @submit.prevent="loginForm.$submit()">
         <UFormField label="Email" name="email">
           <UInput
             v-model="loginForm.email"

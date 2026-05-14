@@ -28,7 +28,7 @@ const confirmForm = createFormObject({
 <template>
   <form
     class="rounded-2xl border border-emerald-400/30 bg-white/5 p-8 glow-green"
-    @submit.prevent="confirmForm()"
+    @submit.prevent="confirmForm.$submit()"
   >
     <div class="text-xs uppercase tracking-widest text-emerald-300 mb-3">⚔ IRL Challenge</div>
     <h2 class="text-3xl font-bold leading-tight mb-2">

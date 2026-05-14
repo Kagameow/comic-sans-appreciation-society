@@ -49,6 +49,13 @@ export default defineRstorePlugin({
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
       if (next) payload.setResult(next)
+      // @nuxtjs/supabase only refreshes useSupabaseUser() on auth-state
+      // changes whose session JSON differs — that's not guaranteed for
+      // a metadata-only update. Re-fetch claims explicitly so every
+      // consumer reading user.value sees the new metadata immediately.
+      const { data: claimsData } = await supabase.auth.getClaims()
+      const userRef = useSupabaseUser()
+      userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
     })
 
     hook('deleteItem', async (payload) => {
