@@ -15,6 +15,8 @@ const messages = [
   'Tom: please use @pa-fe instead of pinging me directly',
   'No Jira tickets were created during the making of this website',
   'Vlada\'s longest office visit: 5 min. Purpose: telling Tom we\'re switching to React. Worth it.',
+  'All your codebase are belong to Evan You',
+  '▲ ▲ ▲ · Claude can\'t into vue3force',
 ]
 </script>
 
