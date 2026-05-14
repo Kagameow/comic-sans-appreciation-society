@@ -4,10 +4,27 @@ export default defineNuxtConfig({
 
   modules: [
     '@nuxt/ui',
+    '@nuxt/fonts',
     '@nuxtjs/supabase',
     '@vueuse/nuxt',
     '@rstore/nuxt',
   ],
+
+  // The fonts module reads the `@theme` block in app/assets/css/main.css
+  // (Tailwind v4 token names) and downloads + self-hosts each family.
+  // Subsets/styles are trimmed to what we actually render.
+  fonts: {
+    defaults: {
+      weights: [400, 500, 600, 700],
+      styles: ['normal'],
+      subsets: ['latin', 'latin-ext'],
+    },
+    families: [
+      { name: 'VT323',           weights: [400],           provider: 'google' },
+      { name: 'Share Tech Mono', weights: [400],           provider: 'google' },
+      { name: 'IBM Plex Mono',   weights: [400, 500, 600], provider: 'google' },
+    ],
+  },
 
   // rstoreDirs default to ['rstore'] resolved relative to srcDir (app/), so
   // app/rstore/ and app/rstore/plugins/ are scanned automatically.
@@ -46,12 +63,8 @@ export default defineNuxtConfig({
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
-      link: [
-        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
-        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
-        { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap' },
-        { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/comic-mono@0.0.1/index.css' },
-      ],
+      // Fonts are self-hosted via @nuxt/fonts (see `fonts` config above);
+      // no <link> tags to Google Fonts.
     },
   },
 })

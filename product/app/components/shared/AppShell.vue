@@ -65,5 +65,7 @@ const isDark = computed({
     <main>
       <slot />
     </main>
+
+    <SharedVersionChip />
   </div>
 </template>
