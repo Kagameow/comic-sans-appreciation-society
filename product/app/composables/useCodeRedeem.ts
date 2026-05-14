@@ -18,7 +18,7 @@ type AwardResponse = {
  * Server is the source of truth — this composable only dispatches.
  */
 export function useCodeRedeem() {
-  const game = useGameStore()
+  const game = useGame()
   const lockout = useCodeLockout()
 
   const mode = ref<Mode>('input')

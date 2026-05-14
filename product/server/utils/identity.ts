@@ -13,9 +13,21 @@ export async function currentPlayer(event: H3Event): Promise<Player | null> {
   return useRepo().ensurePlayerForUser({
     id: user.id,
     email: user.email,
-    name: (user.user_metadata?.full_name as string | undefined) ?? null,
+    name: displayNameForUser(user),
     avatar: null,
+    avatarUrl: avatarUrlForUser(user),
   })
+}
+
+function avatarUrlForUser(user: { user_metadata?: Record<string, unknown> | null }): string | null {
+  const url = user.user_metadata?.avatar_url
+  return typeof url === 'string' && url.trim() ? url.trim() : null
+}
+
+function displayNameForUser(user: { email?: string | null; user_metadata?: Record<string, unknown> | null }): string {
+  const display = user.user_metadata?.display_name
+  if (typeof display === 'string' && display.trim()) return display.trim()
+  return user.email?.trim() || 'Anonymous'
 }
 
 /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = useGameStore()
+const game = useGame()
 const admin = useAdminActions()
 
 const options = [
@@ -15,7 +15,7 @@ const minutesLeft = computed(() => {
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
     <div class="flex items-center justify-between mb-4">
       <div>
         <h2 class="text-xl font-semibold flex items-center gap-2">
@@ -28,7 +28,7 @@ const minutesLeft = computed(() => {
       </div>
       <UButton
         v-if="game.isMultiplierActive"
-        color="red"
+        color="error"
         variant="soft"
         icon="i-lucide-stop-circle"
         @click="admin.clearMultiplier"
@@ -36,7 +36,7 @@ const minutesLeft = computed(() => {
         Stop ({{ minutesLeft }}m left)
       </UButton>
     </div>
-    <div class="grid grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
       <button
         v-for="b in options"
         :key="b.n"

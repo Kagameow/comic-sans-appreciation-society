@@ -4,7 +4,7 @@
  * Stateless — the codes registry is owned by CodesTable.
  */
 export function useAdminActions() {
-  const game = useGameStore()
+  const game = useGame()
 
   async function setMultiplier(multiplier: number, minutes: number) {
     await $fetch('/api/admin/multiplier', { method: 'POST', body: { multiplier, minutes } })

@@ -3,11 +3,11 @@
     <UIcon name="i-lucide-log-in" class="h-12 w-12 mx-auto text-emerald-300 mb-4" />
     <h2 class="text-2xl font-bold mb-2">Sign in to play</h2>
     <p class="text-slate-400 mb-6 max-w-md mx-auto">
-      Each migration code you find is logged against your account. Sign in with Google
-      to join the leaderboard.
+      Each migration code you find is logged against your account. Sign in with the
+      email and password your admin gave you to join the leaderboard.
     </p>
     <UButton size="lg" color="primary" icon="i-lucide-log-in" to="/login">
-      Continue with Google
+      Sign in
     </UButton>
     <p class="text-xs text-slate-500 mt-4">
       You can still watch the

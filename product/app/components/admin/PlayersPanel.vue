@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = useGameStore()
+const game = useGame()
 const { adjustPoints } = useAdminActions()
 
 const search = ref('')
@@ -9,18 +9,18 @@ const filtered = computed(() =>
 </script>
 
 <template>
-  <section class="rounded-2xl border border-white/10 bg-white/5 p-6">
-    <div class="flex items-center justify-between mb-4">
+  <section class="rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
       <h2 class="text-xl font-semibold">Player Management</h2>
       <UInput
         v-model="search"
         icon="i-lucide-search"
         placeholder="Search players…"
-        class="w-64"
+        class="w-full sm:w-64"
       />
     </div>
-    <div class="overflow-hidden rounded-lg border border-white/10">
-      <table class="w-full text-sm">
+    <div class="overflow-x-auto rounded-lg border border-white/10">
+      <table class="w-full text-sm min-w-[560px]">
         <thead class="bg-white/[0.04] text-slate-400 text-xs uppercase">
           <tr>
             <th class="text-left px-4 py-2">Player</th>
@@ -33,7 +33,14 @@ const filtered = computed(() =>
         <tbody>
           <tr v-for="p in filtered" :key="p.id" class="border-t border-white/10">
             <td class="px-4 py-2 flex items-center gap-2">
-              <span class="text-lg">{{ p.avatar }}</span> {{ p.name }}
+              <img
+                v-if="p.avatarUrl"
+                :src="p.avatarUrl"
+                :alt="p.name"
+                class="h-6 w-6 rounded-full object-cover"
+              />
+              <span v-else class="text-lg">{{ p.avatar }}</span>
+              {{ p.name }}
             </td>
             <td class="px-4 py-2">
               <div class="flex items-center justify-center gap-1">
@@ -53,8 +60,8 @@ const filtered = computed(() =>
               {{ p.points.toLocaleString() }}
             </td>
             <td class="px-4 py-2 text-right space-x-1">
-              <UButton size="2xs" color="primary" variant="soft" @click="adjustPoints(p.id, 10)">+10</UButton>
-              <UButton size="2xs" color="red"     variant="soft" @click="adjustPoints(p.id, -10)">-10</UButton>
+              <UButton size="xs" color="primary" variant="soft" @click="adjustPoints(p.id, 10)">+10</UButton>
+              <UButton size="xs" color="error"   variant="soft" @click="adjustPoints(p.id, -10)">-10</UButton>
             </td>
           </tr>
         </tbody>
