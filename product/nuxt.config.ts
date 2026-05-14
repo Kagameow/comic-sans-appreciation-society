@@ -2,6 +2,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
 
+  // The MarqueeTicker uses the deprecated native <marquee> element on purpose
+  // (the joke). Vue's compiler warns on unknown tags, so flag it as a custom
+  // element to skip component resolution.
+  vue: {
+    compilerOptions: {
+      isCustomElement: (tag: string) => tag === 'marquee',
+    },
+  },
+
   modules: [
     '@nuxt/ui',
     '@nuxt/fonts',
