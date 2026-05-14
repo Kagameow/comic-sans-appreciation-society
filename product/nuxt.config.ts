@@ -46,6 +46,9 @@ export default defineNuxtConfig({
   },
 
   supabase: {
+    // No generated database types — the data layer is in-memory in repo.ts.
+    // Disabling stops the boot-time WARN that hunts for database.types.ts.
+    types: false,
     // Game pages stay anonymous (Code Check + Leaderboard). Only /admin is
     // gated — the module auto-redirects unauthed visitors there to /login
     // and stashes the original destination in a cookie for /confirm to read.
@@ -54,6 +57,14 @@ export default defineNuxtConfig({
       callback: '/confirm',
       include: ['/admin(/*)?'],
       saveRedirectToCookie: true,
+    },
+  },
+
+  vite: {
+    optimizeDeps: {
+      // Pre-bundle so Vite doesn't trigger a page reload the first time
+      // each surface mounts (Vite asked nicely in dev).
+      include: ['@rstore/vue', 'canvas-confetti'],
     },
   },
 
