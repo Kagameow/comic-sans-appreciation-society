@@ -8,9 +8,6 @@ const props = defineProps<{ lockout: LockoutState }>()
 const emit = defineEmits<{ (e: 'submit', value: string): void }>()
 
 const game = useGame()
-const inputEl = ref<HTMLInputElement | null>(null)
-
-defineExpose({ focus: () => inputEl.value?.focus() })
 
 const schema = v.object({
   code: v.pipe(v.string(), v.trim(), v.minLength(1, 'Enter a code')),
@@ -40,14 +37,15 @@ const codeForm = createFormObject({
       @error="focusFirstError"
     >
       <UFormField name="code" class="flex-1 min-w-0">
-        <input
-          ref="inputEl"
-          :value="codeForm.code"
+        <UInput
+          :model-value="codeForm.code"
           :disabled="lockout.locked.value"
           autofocus
+          size="xl"
           :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
-          class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-xl px-4 sm:px-5 py-4 sm:py-5 text-xl sm:text-2xl ticker-mono tracking-wider text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 disabled:opacity-40 uppercase"
-          @input="codeForm.code = ((($event.target as HTMLInputElement).value) || '').toUpperCase()"
+          class="w-full"
+          :ui="{ base: 'ticker-mono tracking-wider uppercase text-xl sm:text-2xl py-4 sm:py-5' }"
+          @update:model-value="codeForm.code = String($event ?? '').toUpperCase()"
         />
       </UFormField>
       <UButton

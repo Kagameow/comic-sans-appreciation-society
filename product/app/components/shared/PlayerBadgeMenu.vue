@@ -74,7 +74,9 @@ watch(() => avatarForm.file, (f) => {
 
 <template>
   <UPopover>
-    <button
+    <UButton
+      variant="ghost"
+      color="neutral"
       class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-md border border-white/10 hover:bg-white/5"
     >
       <span
@@ -103,7 +105,7 @@ watch(() => avatarForm.file, (f) => {
       >
         {{ displayName }}
       </span>
-    </button>
+    </UButton>
     <template #content>
       <div class="p-3 w-72 space-y-3">
         <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>

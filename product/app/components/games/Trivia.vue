@@ -41,23 +41,19 @@ function pick(i: number) {
     <h2 class="text-2xl font-semibold mb-6">{{ question }}</h2>
 
     <div class="grid sm:grid-cols-2 gap-3">
-      <button
+      <UButton
         v-for="(a, i) in answers"
         :key="i"
         :disabled="picked !== null"
-        :class="[
-          'text-left px-4 py-3 rounded-lg border transition-all',
-          picked !== null && i === correctIdx
-            ? 'bg-emerald-500/20 border-emerald-400 text-emerald-300'
-            : picked === i
-              ? 'bg-rose-500/15 border-rose-400'
-              : 'bg-white/5 border-white/10 hover:border-emerald-400/60 hover:bg-white/10',
-        ]"
+        :color="picked !== null && i === correctIdx ? 'success' : picked === i ? 'error' : 'neutral'"
+        variant="soft"
+        block
+        class="!justify-start text-left px-4 py-3 rounded-lg border h-auto transition-all"
         @click="pick(i)"
       >
         <span class="ticker-mono text-xs text-slate-400 mr-2">{{ String.fromCharCode(65 + i) }}</span>
         {{ a }}
-      </button>
+      </UButton>
     </div>
   </div>
 </template>
