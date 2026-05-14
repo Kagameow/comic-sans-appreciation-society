@@ -1,7 +1,7 @@
 <template>
   <div class="marquee-bar">
     <marquee scrollamount="3">
-      {{ messages.join(' ♥ ') }}
+      <span v-for="i in 3" :key="i">{{ text }}</span>
     </marquee>
   </div>
 </template>
@@ -16,8 +16,11 @@ const messages = [
   'No Jira tickets were created during the making of this website',
   'Vlada\'s longest office visit: 5 min. Purpose: telling Tom we\'re switching to React. Worth it.',
   'All your codebase are belong to Evan You',
+  'Vue 3.5 \'Tengen Toppa Gurren Lagann\' · Vue 3.2 \'Quintessential Quintuplets\' · Vue 3.0 \'One Piece\' · yes these are real release names · yes Evan You is a weeb',
   '▲ ▲ ▲ · Claude can\'t into vue3force',
 ]
+
+const text = messages.join(' ♥ ') + ' ♥ '
 </script>
 
 <style scoped>
