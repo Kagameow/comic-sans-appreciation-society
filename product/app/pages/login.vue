@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import * as v from 'valibot'
-
 definePageMeta({ layout: false })
 
 const user = useSupabaseUser()
@@ -10,13 +8,7 @@ const store = useStore()
 
 const denied = computed(() => route.query.denied === 'admin')
 
-const schema = v.object({
-  email: v.pipe(v.string(), v.trim(), v.email('Enter a valid email')),
-  password: v.pipe(v.string(), v.minLength(6, 'Must be at least 6 characters')),
-})
-
 const loginForm = store.session.createForm({
-  schema,
   defaultValues: () => ({ email: '', password: '' }),
 })
 

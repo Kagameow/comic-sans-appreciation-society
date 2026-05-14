@@ -19,6 +19,7 @@ function toCurrentUser(user: User | null) {
 
 export default defineRstorePlugin({
   name: 'supabase-auth',
+  category: 'remote',
   setup({ hook }) {
     hook('fetchFirst', async (payload) => {
       const name = payload.collection.name
