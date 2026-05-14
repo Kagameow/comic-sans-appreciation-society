@@ -11,7 +11,7 @@ export async function currentPlayer(event: H3Event): Promise<Player | null> {
   const user = await serverSupabaseUser(event).catch(() => null)
   if (!user) return null
   return useRepo().ensurePlayerForUser({
-    id: user.id,
+    id: user.sub,
     email: user.email,
     name: displayNameForUser(user),
     avatar: null,

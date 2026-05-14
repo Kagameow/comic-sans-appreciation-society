@@ -37,7 +37,7 @@ const avatarForm = createFormObject({
   schema: avatarSchema,
   async submit(values): Promise<{ file: File | null }> {
     if (!user.value || !values.file) throw new Error('Not signed in')
-    const uid = user.value.id
+    const uid = user.value.sub
     const ext = values.file.name.split('.').pop()?.toLowerCase() || 'png'
     const path = `${uid}/${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, values.file, {
