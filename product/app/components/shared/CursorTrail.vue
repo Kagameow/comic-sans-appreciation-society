@@ -50,7 +50,7 @@ onUnmounted(() => {
 <style>
 .vue-cursor,
 .vue-cursor * {
-  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 261.76 226.69' width='24' height='24' style='transform:rotate(180deg)'><path d='M161.096.001l-30.224 52.35L100.647.001H0l130.877 226.688L261.749.001z' fill='%2341b883'/><path d='M161.096.001l-30.224 52.35L100.647.001H52.346l78.526 136.01L209.398.001z' fill='%2334495e'/></svg>") 12 20, auto !important;
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-40 -40 340 310' width='24' height='24'><g transform='rotate(210 130.88 113.35)'><path d='M161.096.001l-30.224 52.35L100.647.001H0l130.877 226.688L261.749.001z' fill='%2341b883'/><path d='M161.096.001l-30.224 52.35L100.647.001H52.346l78.526 136.01L209.398.001z' fill='%2334495e'/></g></svg>") 4 2, auto !important;
 }
 </style>
 
