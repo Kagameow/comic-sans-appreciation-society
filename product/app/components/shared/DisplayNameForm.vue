@@ -27,7 +27,7 @@ const nameForm = createFormObject({
   async submit(values): Promise<{ display_name: string }> {
     if (!user.value) throw new Error('Not signed in')
     const display_name = values.display_name as string
-    await store.currentUser.update({ display_name }, { key: user.value.id })
+    await store.currentUser.update({ display_name }, { key: user.value.sub })
     return { display_name }
   },
   resetOnSuccess: false,
