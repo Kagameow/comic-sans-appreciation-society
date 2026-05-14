@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import * as v from 'valibot'
+import logoUrl from '~/assets/images/logo.png'
 
 definePageMeta({ layout: false })
 
@@ -37,6 +38,7 @@ watchEffect(() => {
   <div class="min-h-screen flex items-center justify-center p-6">
     <div class="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-8 shadow-card">
       <div class="text-center mb-6">
+        <img :src="logoUrl" alt="" class="mx-auto h-20 w-20 mb-4" />
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs ticker-mono mb-4">
           <UIcon name="i-lucide-shield" class="h-3 w-3" /> architect.login
         </div>
