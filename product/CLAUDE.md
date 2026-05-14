@@ -57,8 +57,21 @@ pnpm typecheck  # nuxt typecheck (vue-tsc)
 
 ## Conventions
 
-- **Every form goes through rstore.** No exceptions. Login, display-name edit, avatar upload, code redemption, IRL-challenge confirmation — all use `createFormObject({ schema, submit })` from `@rstore/vue` (collection-bound `createForm`/`updateForm` when the form maps to a CRUD operation, plain `createFormObject` when it's a custom action). Schemas are valibot (`v.object({ ... })`). UFormField is fine as a layout wrapper around the field, but **don't combine `<UForm>` validation with rstore form validation** — pick one (rstore).
-- **Don't bypass the server.** New game-state mutations belong in `repo.ts` + an `/api` route; don't mutate rstore cache directly from components — go through `store.x.update(...)` / `update`/`create` etc., let the plugin route to the API.
+- **Every form goes through rstore. No exceptions.** Login, display-name edit, avatar upload, code redemption, IRL-challenge confirmation — all of them.
+    - **Submit handler is `form.$submit()`, never `form()`.** The form is a `Proxy` over `reactive({...})`, not callable; calling `form()` throws `TypeError: ... is not a function` (root cause of the 2026-05-14 prod login outage).
+    - **CRUD against a collection → collection-bound `store.<collection>.createForm({...})` / `.updateForm({...})`.** Schemas live on the collection as `formSchema: { create, update }` so they're picked up automatically. `updateForm` is async (awaits a `findFirst` for initial values), so mount it inside a `<Suspense>` boundary if it's outside `<NuxtPage>` — see `SharedPlayerBadge` + `SharedPlayerBadgeMenu`.
+    - **Custom actions (e.g. Storage upload + update) → plain `createFormObject({ schema, submit })`** imported from `@rstore/vue` (not auto-imported). Schema stays inline.
+    - **Schemas are valibot.** Don't combine `<UForm>` validation with rstore form validation — pick rstore. `UFormField` is fine as a layout wrapper.
+- **Collections live in `app/rstore/*.ts`.**
+    - Always `withItemType<T>().defineCollection({...})` — never a bare object. The currying pattern is required for proper type inference.
+    - Override `getKey` when the primary key isn't `id`. Use `fields.parse/serialize` for non-primitive fields (e.g. dates → keep ISO strings out of templates). Use computed fields for derived values instead of computing in templates.
+    - **Scanner gotcha:** the Nuxt module treats *every* export from `app/rstore/*.ts` as a collection candidate (and the scan is one level deep). Non-collection helpers (schemas, types, utility consts) in that directory must be **non-exported**, or moved elsewhere (`#shared`, `app/utils/`).
+- **Plugins live in `app/rstore/plugins/*.ts`.**
+    - Plugin for shared transport across multiple collections (e.g. `supabase-auth` serves both `session` + `currentUser`); collection-scoped hook for one-offs.
+    - **Categorize every plugin** with `category: 'virtual' | 'local' | 'remote' | 'processing'` — hook ordering matters once a local cache plugin lands. Both current plugins are `'remote'`.
+    - Abort hooks early by calling `payload.setResult(...)`. Use `scopeId` only if there are multiple backends.
+- **Don't bypass the cache or the server.** Mutations through `store.x.update(...)` / `create(...)` / `delete(...)` propagate to readers automatically — no manual refetch, and don't mutate the rstore cache directly from components. New game-state mutations belong in `repo.ts` + an `/api` route.
+- **Queries**: `query` / `liveQuery` are designed for `setup()` (reactive + awaitable). Wrap polling/visibility logic in a composable (`useGame()` does this for `gameState`).
 - **Minigame components must not self-award.** Pattern: component emits `resolve(base)`; server applies multiplier in `/api/codes/award`.
 - **Don't trust client-supplied identity.** Server routes derive the player from `requirePlayer(event)` / `currentPlayer(event)`; the request body never carries a `playerName`.
 - **Auth allowlist is `email`-keyed, not `user_metadata`.** Per Supabase security guidance, `user_metadata` is user-editable. Email is the provider's assertion.
