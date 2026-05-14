@@ -131,7 +131,7 @@ watch(() => avatarForm.file, (f) => {
       <div class="p-3 w-72 space-y-3">
         <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
 
-        <form @submit.prevent="nameForm()">
+        <form @submit.prevent="nameForm.$submit()">
           <UFormField label="Display name">
             <div class="flex gap-2">
               <UInput
