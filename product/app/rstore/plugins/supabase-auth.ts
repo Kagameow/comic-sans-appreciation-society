@@ -50,6 +50,15 @@ export default defineRstorePlugin({
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
       if (next) payload.setResult(next)
+      // updateUser patches session.user server-side + locally but does NOT
+      // re-mint the access token — the JWT still carries the old metadata,
+      // so useSupabaseUser() consumers (PlayerBadgeMenu avatar/display name)
+      // keep showing pre-update values. Refresh, then push fresh claims into
+      // the reactive ref so the UI updates immediately.
+      await supabase.auth.refreshSession()
+      const { data: claimsData } = await supabase.auth.getClaims()
+      const userRef = useSupabaseUser()
+      userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
     })
 
     hook('deleteItem', async (payload) => {
