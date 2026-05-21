@@ -227,6 +227,19 @@ export function useRepo() {
       return { ok: true as const, awarded, winnerName: player.name }
     },
 
+    /** True if this player has already received points for `codeRef`. */
+    hasSolvedCode(playerId: string, codeRef: string): boolean {
+      return store.redemptions.some(r => r.playerId === playerId && r.code === codeRef && r.awarded > 0)
+    },
+    /** Count of distinct players who have solved `codeRef`. Drives first-mover tiers. */
+    distinctSolverCount(codeRef: string): number {
+      const seen = new Set<string>()
+      for (const r of store.redemptions) {
+        if (r.code === codeRef && r.awarded > 0) seen.add(r.playerId)
+      }
+      return seen.size
+    },
+
     redeemMinigameResult(player: Player, codeRef: string, base: number) {
       if (base === 0) return { awarded: 0, multiplier: 1, gemUnlocked: false, clueUnlocked: false }
       const multiplier = currentMultiplier()
