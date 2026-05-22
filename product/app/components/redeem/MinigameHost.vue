@@ -19,6 +19,7 @@ defineEmits<{ (e: 'resolve', points: number): void }>()
   <!-- Arcade games are dispatched by codeRef so a single 'arcade' type can host N games. -->
   <template v-else-if="mode === 'arcade'">
     <GamesWhackABug v-if="codeRef === 'WHACK-BUGS'" @resolve="$emit('resolve', $event)" />
+    <GamesSnake v-else-if="codeRef === 'SNAKE-RUN'" @resolve="$emit('resolve', $event)" />
     <div v-else class="rounded-2xl border border-rose-400/30 bg-rose-500/5 p-6 text-rose-200">
       Unknown arcade game: <span class="ticker-mono">{{ codeRef }}</span>
     </div>
