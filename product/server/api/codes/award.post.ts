@@ -10,11 +10,11 @@ export default defineEventHandler(async (event) => {
   const player = await requirePlayer(event)
   const repo = useRepo()
 
-  // For the crossword the server picks the payout: first-mover tier +
+  // For crossword + arcade the server picks the payout: first-mover tier +
   // one solve per player. The client-supplied base is only the
   // "did they solve it?" signal (1 = solved, 0 = bailed).
   const code = repo.getCode(codeRef)
-  if (code?.type === 'crossword') {
+  if (code?.type === 'crossword' || code?.type === 'arcade') {
     if (base <= 0) return { awarded: 0, multiplier: 1, alreadySolved: false }
     if (repo.hasSolvedCode(player.id, codeRef)) {
       return { awarded: 0, multiplier: 1, alreadySolved: true }

@@ -26,6 +26,7 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
       <RedeemMinigameHost
         v-else
         :mode="redeem.mode.value"
+        :code-ref="redeem.activeMinigame.value?.codeRef"
         @resolve="redeem.resolveMinigame"
       />
     </div>
