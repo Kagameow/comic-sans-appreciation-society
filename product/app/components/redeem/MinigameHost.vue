@@ -20,6 +20,7 @@ defineEmits<{ (e: 'resolve', points: number): void }>()
   <template v-else-if="mode === 'arcade'">
     <GamesWhackABug v-if="codeRef === 'WHACK-BUGS'" @resolve="$emit('resolve', $event)" />
     <GamesSnake v-else-if="codeRef === 'SNAKE-RUN'" @resolve="$emit('resolve', $event)" />
+    <GamesCatchProps v-else-if="codeRef === 'CATCH-PROPS'" @resolve="$emit('resolve', $event)" />
     <div v-else class="rounded-2xl border border-rose-400/30 bg-rose-500/5 p-6 text-rose-200">
       Unknown arcade game: <span class="ticker-mono">{{ codeRef }}</span>
     </div>
