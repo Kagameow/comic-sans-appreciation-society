@@ -41,6 +41,7 @@ const seedCodes: Code[] = [
   { code: 'SETUP',        type: 'crossword', value:   75, isSuperCode: false, singleUse: false, isUsed: false },
   { code: 'CHALLENGE',    type: 'challenge', value:  150, isSuperCode: false, singleUse: false, isUsed: false },
   { code: 'WHACK-BUGS',   type: 'arcade',    value:  500, isSuperCode: false, singleUse: false, isUsed: false },
+  { code: 'SNAKE-RUN',    type: 'arcade',    value:  500, isSuperCode: false, singleUse: false, isUsed: false },
   { code: 'DART-WIN',     type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
   { code: 'FOOSBALL-WIN', type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
   { code: 'POOL-WIN',     type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
