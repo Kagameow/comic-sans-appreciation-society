@@ -1,15 +1,17 @@
-type Mode = 'input' | 'trivia' | 'crossword' | 'challenge'
-type Flash = { pts: number; mult: number }
+type Mode = 'input' | 'trivia' | 'crossword' | 'challenge' | 'arcade'
+type Flash = { pts: number; mult: number; note?: string }
 type RedeemResponse =
   | { kind: 'invalid' }
   | { kind: 'point' | 'victory'; awarded: number; multiplier: number; clueUnlocked: boolean }
-  | { kind: 'trivia' | 'crossword' | 'challenge'; codeRef: string }
+  | { kind: 'trivia' | 'crossword' | 'challenge' | 'arcade'; codeRef: string }
   | { kind: 'super'; alreadyWonBy?: string }
 
 type AwardResponse = {
   awarded: number
   multiplier: number
   clueUnlocked?: boolean
+  /** Server returns this for one-solve-per-player minigames (crossword, arcade). */
+  alreadySolved?: boolean
 }
 
 /**
@@ -67,6 +69,7 @@ export function useCodeRedeem() {
       case 'trivia':
       case 'crossword':
       case 'challenge':
+      case 'arcade':
         activeMinigame.value = { codeRef: res.codeRef }
         mode.value = res.kind
     }
@@ -84,6 +87,8 @@ export function useCodeRedeem() {
     if (res.awarded > 0) {
       flashAward(res.awarded, res.multiplier)
       maybeOpenClue(res)
+    } else if (res.alreadySolved) {
+      flash.value = { pts: 0, mult: 1, note: 'You already solved this one — no double points.' }
     }
   }
 
