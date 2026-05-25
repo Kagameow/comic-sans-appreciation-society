@@ -112,7 +112,7 @@ domain. Add the admin emails to `ADMIN_EMAILS` (already wired through
 * Truth moved to the server. The Pinia store is now a thin cache.
 * Code redemption + point math are server-side — clients can't lie about
   multipliers or steal a Super Code without 5 victories.
-* Trivia / Crossword / Challenge components no longer self-award; they
+* Quiz / Crossword / Challenge components no longer self-award; they
   return a `base` value and the server multiplies + logs.
 * The leaderboard polls instead of mock-bumping random rows. Once
   Supabase is wired, swap polling for a realtime subscription.
@@ -128,7 +128,7 @@ product/
 │   ├── AppShell.vue         # Header, nav, multiplier badge, points/avatar
 │   ├── GemsTracker.vue      # 5-gem progress
 │   └── games/
-│       ├── Trivia.vue       # Time-decay question
+│       ├── Quiz.vue       # Time-decay question
 │       ├── Crossword.vue    # 5x5 grid w/ Vue 3 clues
 │       └── Challenge.vue    # IRL match + referee code
 ├── composables/useConfetti.ts

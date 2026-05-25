@@ -14,7 +14,7 @@ export type Player = {
   email?: string
 }
 
-export type CodeType = 'point' | 'trivia' | 'crossword' | 'challenge' | 'arcade' | 'victory' | 'super'
+export type CodeType = 'point' | 'quiz' | 'crossword' | 'challenge' | 'arcade' | 'victory' | 'super'
 
 export type Code = {
   code: string
