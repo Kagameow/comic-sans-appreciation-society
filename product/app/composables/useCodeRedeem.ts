@@ -1,9 +1,9 @@
-type Mode = 'input' | 'trivia' | 'crossword' | 'challenge' | 'arcade'
+type Mode = 'input' | 'quiz' | 'crossword' | 'challenge' | 'arcade'
 type Flash = { pts: number; mult: number; note?: string }
 type RedeemResponse =
   | { kind: 'invalid' }
   | { kind: 'point' | 'victory'; awarded: number; multiplier: number; clueUnlocked: boolean }
-  | { kind: 'trivia' | 'crossword' | 'challenge' | 'arcade'; codeRef: string }
+  | { kind: 'quiz' | 'crossword' | 'challenge' | 'arcade'; codeRef: string }
   | { kind: 'super'; alreadyWonBy?: string }
 
 type AwardResponse = {
@@ -66,7 +66,7 @@ export function useCodeRedeem() {
         flashAward(res.awarded, res.multiplier)
         maybeOpenClue(res)
         return
-      case 'trivia':
+      case 'quiz':
       case 'crossword':
       case 'challenge':
       case 'arcade':

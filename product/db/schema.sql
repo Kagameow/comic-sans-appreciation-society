@@ -16,7 +16,7 @@ create table if not exists public.players (
 );
 
 -- ─── codes (registry) ───────────────────────────────────────────────────────
--- type: 'point' | 'trivia' | 'crossword' | 'challenge' | 'victory' | 'super'
+-- type: 'point' | 'quiz' | 'crossword' | 'challenge' | 'victory' | 'super'
 create table if not exists public.codes (
   code            text primary key,
   type            text not null,

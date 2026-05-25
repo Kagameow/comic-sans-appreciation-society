@@ -1,16 +1,35 @@
 <script setup lang="ts">
-type Mode = 'trivia' | 'crossword' | 'challenge' | 'arcade'
+type Mode = 'quiz' | 'crossword' | 'challenge' | 'arcade'
 
 defineProps<{ mode: Mode; codeRef?: string }>()
 defineEmits<{ (e: 'resolve', points: number): void }>()
 </script>
 
 <template>
-  <GamesTrivia
-    v-if="mode === 'trivia'"
-    question="Which Vue 3 feature lets you render content into a different DOM node?"
-    :answers="['Suspense', 'Teleport', 'Fragments', 'Composition API']"
-    :correct-idx="1"
+  <GamesQuiz
+    v-if="mode === 'quiz'"
+    :questions="[
+      {
+        question: 'What was an important reason to migrate to Vue3?',
+        answers: ['Making users aware how to clear their cookies/cache', 'Better AI integration', 'To avoid using an outdated version', 'Simplified login'],
+        correctIdx: 2
+      },
+      {
+        question: 'What is the legendary, universally applicable troubleshooting advice that Roy and Moss use to answer almost every single IT support call in The IT Crowd?',
+        answers: ['Did you clear your cookies?', 'Have you tried turning it off and on again?', 'Is it plugged into the wall, or the floor?', 'Did you blow on the cartridge?'],
+        correctIdx: 1
+      },
+      {
+        question: 'How many programmers does it take to change a lightbulb?',
+        answers: ['None, that\'s a hardware problem!', 'Just one, quickly', 'Two, one to code and one to review it', 'None, they prefer working in the dark'],
+        correctIdx: 0
+      },
+      {
+        question: 'What kind of movies do pirates like?',
+        answers: ['Action movies', 'Comedies', 'Documentaries', 'Anything rated Arrrrrrrrrr!'],
+        correctIdx: 3
+      }
+    ]"
     @resolve="$emit('resolve', $event)"
   />
   <GamesCrossword v-else-if="mode === 'crossword'" @solve="$emit('resolve', $event)" />

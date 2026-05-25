@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     return { kind: 'point' as const, ...r }
   }
 
-  if (row.type === 'trivia' || row.type === 'crossword' || row.type === 'challenge' || row.type === 'arcade') {
+  if (row.type === 'quiz' || row.type === 'crossword' || row.type === 'challenge' || row.type === 'arcade') {
     return { kind: row.type, codeRef: row.code }
   }
 

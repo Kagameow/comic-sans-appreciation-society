@@ -70,7 +70,7 @@ const codeForm = createFormObject({
         <span v-else-if="lockout.locked.value" class="flex items-center gap-2 text-rose-400 font-semibold ticker-mono">
           <UIcon name="i-lucide-lock" class="h-4 w-4" /> LOCKED: {{ lockout.lockRemain.value }}s
         </span>
-        <span v-else class="opacity-60">Try: V3-READY · REACTIVE · SETUP · CHALLENGE · DART-WIN</span>
+        <span v-else class="opacity-60">Try: V3-READY · QUIZ · SETUP · CHALLENGE · DART-WIN</span>
       </div>
       <span v-if="game.isMultiplierActive" class="ticker-mono text-emerald-300 font-bold">
         ⚡ {{ game.activeMultiplier }}x ACTIVE

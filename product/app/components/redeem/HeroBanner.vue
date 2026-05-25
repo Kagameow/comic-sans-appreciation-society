@@ -5,7 +5,7 @@
     </div>
     <SharedWordArt text="Enter Migration Code" size="lg" arc class="mb-3" />
     <p class="text-sm sm:text-base text-slate-400">
-      Drop your code below. Hidden gems unlock trivia, crosswords, or IRL challenges.
+      Drop your code below. Hidden gems unlock a quiz, crosswords, or IRL challenges.
     </p>
   </div>
 </template>
