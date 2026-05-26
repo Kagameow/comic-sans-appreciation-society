@@ -1,10 +1,10 @@
 export default defineEventHandler(async (event) => {
-  const repo = useRepo()
-  const me = await currentPlayer(event)
-  return {
-    config: repo.getConfig(),
-    players: repo.listPlayers(),
-    me,
-    superWinner: repo.superWinner(),
-  }
+  const repo = useRepo(event)
+  const [me, config, players, superWinner] = await Promise.all([
+    currentPlayer(event),
+    repo.getConfig(),
+    repo.listPlayers(),
+    repo.superWinner(),
+  ])
+  return { config, players, me, superWinner }
 })

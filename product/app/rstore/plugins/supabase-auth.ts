@@ -1,8 +1,9 @@
 /**
  * rstore plugin wiring the `session` and `currentUser` collections to
- * Supabase Auth. fetchFirst reads the current user/session; createItem
- * on `session` signs in; updateItem on `currentUser` writes user_metadata;
- * deleteItem on `session` signs out.
+ * Supabase Auth. fetchFirst reads the current user/session; updateItem on
+ * `currentUser` writes user_metadata; deleteItem on `session` signs out.
+ * Sign-in is no longer here — Visma Connect is OIDC, so login.vue calls
+ * supabase.auth.signInWithOAuth directly and the browser navigates away.
  */
 import type { User } from '@supabase/supabase-js'
 
@@ -31,15 +32,6 @@ export default defineRstorePlugin({
         return
       }
       payload.setResult(toCurrentUser(user))
-    })
-
-    hook('createItem', async (payload) => {
-      if (payload.collection.name !== 'session') return
-      const supabase = useSupabaseClient()
-      const { email, password } = payload.item as { email: string; password: string }
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) throw new Error(error.message)
-      payload.setResult({ id: 'current' })
     })
 
     hook('updateItem', async (payload) => {

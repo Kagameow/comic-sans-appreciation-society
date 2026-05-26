@@ -1,49 +1,107 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { useEventListener, useRafFn } from '@vueuse/core'
 
-const particles = ref<{ id: number, x: number, y: number, hue: number }[]>([])
-let nextId = 0
+type Point = { x: number, y: number, t: number, hue: number }
+
+const LIFETIME = 900
+const MIN_SPAWN_MS = 45
+const FADE_LAYERS = 14
+
+const points = ref<Point[]>([])
+const now = ref(0)
 let hue = 0
 let lastSpawn = 0
 
-function onMove(e: MouseEvent) {
-  const now = Date.now()
-  if (now - lastSpawn < 30) return
-  lastSpawn = now
+useEventListener('mousemove', (e: MouseEvent) => {
+  const t = performance.now()
+  if (t - lastSpawn < MIN_SPAWN_MS) return
+  lastSpawn = t
+  hue = (hue + 6) % 360
+  points.value.push({ x: e.clientX, y: e.clientY, t, hue })
+})
 
-  hue = (hue + 4) % 360
-  const id = nextId++
-  particles.value.push({ id, x: e.clientX, y: e.clientY, hue })
-
-  setTimeout(() => {
-    const idx = particles.value.findIndex(p => p.id === id)
-    if (idx !== -1) particles.value.splice(idx, 1)
-  }, 600)
-}
+useRafFn(() => {
+  const t = performance.now()
+  now.value = t
+  const cutoff = t - LIFETIME
+  let i = 0
+  while (i < points.value.length && points.value[i]!.t < cutoff) i++
+  if (i > 0) points.value.splice(0, i)
+})
 
 onMounted(() => {
   document.documentElement.classList.add('vue-cursor')
-  window.addEventListener('mousemove', onMove)
 })
-
 onUnmounted(() => {
   document.documentElement.classList.remove('vue-cursor')
-  window.removeEventListener('mousemove', onMove)
+})
+
+const pathData = computed(() => {
+  const pts = points.value
+  if (pts.length < 2) return ''
+  let d = `M${pts[0]!.x},${pts[0]!.y}`
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i]!
+    const p1 = pts[i]!
+    const p2 = pts[i + 1]!
+    const p3 = pts[i + 2] ?? p2
+    const c1x = p1.x + (p2.x - p0.x) / 6
+    const c1y = p1.y + (p2.y - p0.y) / 6
+    const c2x = p2.x - (p3.x - p1.x) / 6
+    const c2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C${c1x},${c1y} ${c2x},${c2y} ${p2.x},${p2.y}`
+  }
+  return d
+})
+
+const head = computed(() => points.value.at(-1) ?? null)
+
+const layers = computed(() => {
+  const N = FADE_LAYERS
+  const baseHue = head.value?.hue ?? 0
+  const out: { dasharray: string, dashoffset: number, opacity: number, width: number, hue: number }[] = []
+  // Tiny overlap between slices so seams don't show
+  const slice = 1 / N
+  const overlap = slice * 0.15
+  for (let i = 0; i < N; i++) {
+    const t = (i + 0.5) / N // 0 = tail, 1 = head
+    out.push({
+      dasharray: `${slice + overlap} 1`,
+      dashoffset: -(i * slice),
+      opacity: 0.95 * t,
+      width: 2 + 8 * t,
+      hue: (baseHue - (1 - t) * 70 + 360) % 360,
+    })
+  }
+  return out
 })
 </script>
 
 <template>
   <div class="trail-layer">
-    <div
-      v-for="p in particles"
-      :key="p.id"
-      class="trail-dot"
-      :style="{
-        left: `${p.x}px`,
-        top: `${p.y}px`,
-        '--hue': p.hue,
-      }"
-    />
+    <svg class="trail-svg">
+      <path
+        v-for="(layer, i) in layers"
+        :key="i"
+        :d="pathData"
+        :stroke="`hsl(${layer.hue} 100% 65%)`"
+        :stroke-width="layer.width"
+        :stroke-opacity="layer.opacity"
+        fill="none"
+        pathLength="1"
+        :stroke-dasharray="layer.dasharray"
+        :stroke-dashoffset="layer.dashoffset"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+      <circle
+        v-if="head"
+        :cx="head.x"
+        :cy="head.y"
+        r="6"
+        :fill="`hsl(${head.hue} 100% 65%)`"
+      />
+    </svg>
   </div>
 </template>
 
@@ -63,25 +121,10 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
-.trail-dot {
+.trail-svg {
   position: absolute;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: hsl(var(--hue) 100% 65%);
-  box-shadow: 0 0 8px hsl(var(--hue) 100% 65% / 0.8);
-  transform: translate(-50%, -50%) scale(1);
-  animation: trail-fade 0.6s ease-out forwards;
-}
-
-@keyframes trail-fade {
-  0% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(2.5);
-  }
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 </style>

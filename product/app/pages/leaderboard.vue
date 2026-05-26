@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const game = useGame(2000)
+const game = useGame()
 const myId = computed(() => game.me?.id ?? null)
 
 const sortedPlayers = computed(() => game.sortedPlayers)

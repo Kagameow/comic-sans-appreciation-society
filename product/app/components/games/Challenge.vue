@@ -4,10 +4,14 @@ import { createFormObject } from '@rstore/vue'
 
 const emit = defineEmits<{ (e: 'resolve', points: number): void }>()
 
-const TARGETS = ['Marieke de Vries', 'Joris van Dijk', 'Sanne Bakker', 'Bram Janssen']
+const game = useGame()
 const ACTIVITIES = ['Darts', 'Foosball', 'Pool', 'a Pull-Up Contest', 'Rock Paper Scissors']
 
-const target = ref(TARGETS[Math.floor(Math.random() * TARGETS.length)])
+const target = computed(() => {
+  const others = game.players.filter(p => p.id !== game.me?.id).map(p => p.name)
+  if (!others.length) return 'a colleague'
+  return others[Math.floor(Math.random() * others.length)]
+})
 const activity = ref(ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)])
 
 const schema = v.object({

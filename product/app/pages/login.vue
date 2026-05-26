@@ -2,27 +2,49 @@
 definePageMeta({ layout: false })
 
 const user = useSupabaseUser()
+const supabase = useSupabaseClient()
 const redirect = useSupabaseCookieRedirect()
 const route = useRoute()
-const store = useStore()
 
 const denied = computed(() => route.query.denied === 'admin')
-
-const loginForm = store.session.createForm({
-  defaultValues: () => ({ email: '', password: '' }),
-})
+const loading = ref(false)
+const error = ref<string | null>(null)
 
 function navigateAfterAuth() {
   const dest = redirect.pluck() || '/'
   navigateTo(dest, { replace: true })
 }
 
-loginForm.$onSuccess(() => { navigateAfterAuth() })
-
 // Already authed (cookie session) — bounce out immediately.
 watchEffect(() => {
   if (user.value) navigateAfterAuth()
 })
+
+async function signInWithVisma() {
+  loading.value = true
+  error.value = null
+  // Supabase will redirect the browser to Visma Connect, which redirects back
+  // to <SUPABASE_URL>/auth/v1/callback, which then redirects to /confirm with
+  // the session cookie set. /confirm follows the redirect cookie from there.
+  const { data, error: err } = await supabase.auth.signInWithOAuth({
+    // Provider is typed as a literal union (no `custom:*` template) in
+    // supabase-js 2.105 but the JSDoc + runtime explicitly support the
+    // `custom:` prefix for custom OIDC providers.
+    provider: 'custom:visma-connect' as 'keycloak',
+    options: {
+      redirectTo: `${window.location.origin}/confirm`,
+      scopes: 'openid email profile',
+    },
+  })
+  if (err) {
+    error.value = err.message
+    loading.value = false
+    return
+  }
+  // In the browser the call above usually navigates away on its own. If it
+  // returns a URL instead (SSR shim, popup-blocked, etc.), follow it manually.
+  if (data?.url) window.location.href = data.url
+}
 </script>
 
 <template>
@@ -34,7 +56,7 @@ watchEffect(() => {
         </div>
         <h1 class="text-3xl font-bold tracking-tight">Sign in</h1>
         <p class="text-slate-400 text-sm mt-2">
-          Use the email and password your admin gave you.
+          Use your Visma account to continue.
         </p>
       </div>
 
@@ -45,53 +67,24 @@ watchEffect(() => {
         ⚠ Your account isn't on the admin allowlist.
       </div>
 
-      <UForm
-        :state="loginForm"
-        :schema="loginForm.$schema"
-        class="space-y-4"
-        @submit="loginForm.$submit()"
-        @error="focusFirstError"
+      <UButton
+        block
+        size="lg"
+        color="primary"
+        icon="i-lucide-log-in"
+        :loading="loading"
+        @click="signInWithVisma"
       >
-        <UFormField label="Email" name="email">
-          <UInput
-            v-model="loginForm.email"
-            type="email"
-            autocomplete="email"
-            placeholder="you@visma.com"
-            class="w-full"
-            :disabled="loginForm.$loading"
-          />
-        </UFormField>
+        Sign in with Visma
+      </UButton>
 
-        <UFormField label="Password" name="password">
-          <UInput
-            v-model="loginForm.password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="••••••••"
-            class="w-full"
-            :disabled="loginForm.$loading"
-          />
-        </UFormField>
-
-        <UButton
-          block
-          size="lg"
-          color="primary"
-          icon="i-lucide-log-in"
-          type="submit"
-          :loading="loginForm.$loading"
-        >
-          Sign in
-        </UButton>
-
-        <UAlert
-          v-if="loginForm.$error"
-          color="error"
-          icon="i-lucide-circle-x"
-          :title="loginForm.$error.message"
-        />
-      </UForm>
+      <UAlert
+        v-if="error"
+        class="mt-4"
+        color="error"
+        icon="i-lucide-circle-x"
+        :title="error"
+      />
 
       <p class="mt-6 text-xs text-slate-500 text-center">
         Only emails listed in <code class="ticker-mono">ADMIN_EMAILS</code> can reach
