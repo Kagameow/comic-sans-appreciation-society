@@ -11,7 +11,8 @@
     "typecheck": "nuxt typecheck",
     "setup:visma-connect": "node --env-file=.env scripts/setup-visma-connect.mjs",
     "doctor:visma-connect": "node --env-file=.env scripts/doctor-visma-connect.mjs",
-    "delete:visma-connect": "node --env-file=.env scripts/delete-visma-connect.mjs"
+    "delete:visma-connect": "node --env-file=.env scripts/delete-visma-connect.mjs",
+    "cleanup:non-visma-users": "node --env-file=.env scripts/cleanup-non-visma-users.mjs"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.109",

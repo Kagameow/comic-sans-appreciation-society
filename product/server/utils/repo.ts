@@ -1,282 +1,364 @@
 /**
- * In-memory data layer for the POC.
+ * Supabase-backed data layer. Replaces the in-memory POC store.
  *
- * Wraps the operations the API routes need behind a single `useRepo()` call.
- * When real Supabase creds are wired up, replace this module's body with a
- * Supabase-backed implementation that exposes the same methods — the API
- * routes don't care which one is behind it.
+ * Every method is async. Game-mutation methods do their own SELECT-then-UPDATE
+ * sequences; the super-code claim is race-safe via `update … where super_winner
+ * is null`. Multiplier expiry is computed client-side (any expired window
+ * collapses to 1×) so the row doesn't need a clearing job.
  *
- * State is module-scoped so it survives between requests in dev. Restart the
- * server to reset.
+ * `useRepo(event)` opens a service-role client bound to the request — RLS is
+ * bypassed because the API routes already gate identity (`requirePlayer`,
+ * `isAdminRequest`) before calling these methods.
  */
+import { serverSupabaseServiceRole } from '#supabase/server'
+import type { H3Event } from 'h3'
+import type { Player, Code, GameConfig, CodeType } from '#shared/types/game'
 
-import type { Player, Code, GameConfig, Redemption } from '#shared/types/game'
+type PlayerRow = {
+  id: string
+  user_id: string | null
+  email: string | null
+  name: string
+  avatar: string
+  avatar_url: string | null
+  points: number
+  victories: number
+  gems: number
+  latest: string
+  inserted_at: string
+  updated_at: string
+}
 
-// ─── seed ────────────────────────────────────────────────────────────────────
+type CodeRow = {
+  code: string
+  type: CodeType
+  value: number
+  is_super_code: boolean
+  single_use: boolean
+  is_used: boolean
+  used_by: string | null
+  used_at: string | null
+}
 
-const seedPlayers: Player[] = [
-  { id: 'p01', name: 'Daan Nagtegaal',     avatar: '🦊', points: 2840, victories: 3, gems: 3, latest: 'Solved Crossword' },
-  { id: 'p02', name: 'Marieke de Vries',   avatar: '🐼', points: 2710, victories: 2, gems: 2, latest: 'Quiz +100' },
-  { id: 'p03', name: 'Joris van Dijk',     avatar: '🦉', points: 2455, victories: 4, gems: 1, latest: 'Won Darts Challenge' },
-  { id: 'p04', name: 'Sanne Bakker',       avatar: '🦄', points: 2210, victories: 1, gems: 0, latest: 'Code V3-READY' },
-  { id: 'p05', name: 'Bram Janssen',       avatar: '🐺', points: 2050, victories: 0, gems: 0, latest: 'Solved Quiz' },
-  { id: 'p06', name: 'Eva Mulder',         avatar: '🦋', points: 1890, victories: 1, gems: 0, latest: 'Code COMPOSITION' },
-  { id: 'p07', name: 'Tim Visser',         avatar: '🐙', points: 1720, victories: 0, gems: 0, latest: 'Crossword +75' },
-  { id: 'p08', name: 'Lotte Smit',         avatar: '🦜', points: 1640, victories: 2, gems: 0, latest: 'Migrated 12 files' },
-  { id: 'p09', name: 'Ruben Peters',       avatar: '🐸', points: 1510, victories: 0, gems: 0, latest: 'Code TELEPORT' },
-  { id: 'p10', name: 'Fleur Hendriks',     avatar: '🦔', points: 1420, victories: 1, gems: 0, latest: 'Quiz +50' },
-  { id: 'p11', name: 'Niels van der Berg', avatar: '🐢', points: 1280, victories: 0, gems: 0, latest: 'Solved Crossword' },
-  { id: 'p12', name: 'Iris Brouwer',       avatar: '🦩', points: 1150, victories: 0, gems: 0, latest: 'Code PINIA' },
-  { id: 'p13', name: 'Thijs Maas',         avatar: '🐳', points: 1040, victories: 0, gems: 0, latest: 'Quiz +100' },
-  { id: 'p14', name: 'Anouk Vermeer',      avatar: '🦊', points:  920, victories: 0, gems: 0, latest: 'Manual +10' },
-  { id: 'p15', name: 'Sven Bos',           avatar: '🐯', points:  810, victories: 0, gems: 0, latest: 'Code SETUP' },
-]
+type ConfigRow = {
+  id: number
+  multiplier: number
+  multiplier_ends_at: string | null
+  super_code: string | null
+  super_winner: string | null
+  super_won_at: string | null
+}
 
-const seedCodes: Code[] = [
-  { code: 'V3-READY',     type: 'point',     value:   50, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'COMPOSITION',  type: 'point',     value:   75, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'TELEPORT',     type: 'point',     value:   25, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'PINIA',        type: 'point',     value:  100, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'QUIZ',         type: 'quiz',      value:  100, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'SETUP',        type: 'crossword', value:   75, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'CHALLENGE',    type: 'challenge', value:  150, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'WHACK-BUGS',   type: 'arcade',    value:  500, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'SNAKE-RUN',    type: 'arcade',    value:  500, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'CATCH-PROPS',  type: 'arcade',    value:  500, isSuperCode: false, singleUse: false, isUsed: false },
-  { code: 'DART-WIN',     type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
-  { code: 'FOOSBALL-WIN', type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
-  { code: 'POOL-WIN',     type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
-  { code: 'RPS-WIN',      type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
-  { code: 'TYPING-WIN',   type: 'victory',   value:  150, isSuperCode: false, singleUse: true,  isUsed: false },
-  { code: 'MASTER-BRANCH',type: 'super',     value: 1000, isSuperCode: true,  singleUse: true,  isUsed: false },
-]
-
-// Use a global cache so HMR doesn't wipe state every save.
-const g = globalThis as unknown as {
-  __migrationStore?: {
-    players: Player[]
-    codes: Code[]
-    config: GameConfig
-    redemptions: Redemption[]
+function rowToPlayer(row: PlayerRow): Player {
+  return {
+    id: row.id,
+    name: row.name,
+    avatar: row.avatar,
+    avatarUrl: row.avatar_url ?? undefined,
+    points: row.points,
+    victories: row.victories,
+    gems: row.gems,
+    latest: row.latest,
+    userId: row.user_id ?? undefined,
+    email: row.email ?? undefined,
   }
 }
 
-if (!g.__migrationStore) {
-  g.__migrationStore = {
-    players: seedPlayers.map(p => ({ ...p })),
-    codes:   seedCodes.map(c => ({ ...c })),
-    config:  { multiplier: 1, multiplierEndsAt: null, superCode: 'MASTER-BRANCH', superWinner: null, superWonAt: null },
-    redemptions: [],
+function rowToCode(row: CodeRow): Code {
+  return {
+    code: row.code,
+    type: row.type,
+    value: row.value,
+    isSuperCode: row.is_super_code,
+    singleUse: row.single_use,
+    isUsed: row.is_used,
+    usedBy: row.used_by ?? undefined,
+    usedAt: row.used_at ? new Date(row.used_at).getTime() : undefined,
   }
 }
-const store = g.__migrationStore!
 
-// ─── public api ──────────────────────────────────────────────────────────────
+function rowToConfig(row: ConfigRow): GameConfig {
+  const endsAt = row.multiplier_ends_at ? new Date(row.multiplier_ends_at).getTime() : null
+  const expired = endsAt !== null && endsAt < Date.now()
+  return {
+    multiplier: expired ? 1 : Number(row.multiplier ?? 1),
+    multiplierEndsAt: expired ? null : endsAt,
+    superCode: row.super_code ?? null,
+    superWinner: row.super_winner ?? null,
+    superWonAt: row.super_won_at ? new Date(row.super_won_at).getTime() : null,
+  }
+}
 
-export function useRepo() {
-  const currentMultiplier = (): number => {
-    if (!store.config.multiplierEndsAt) return 1
-    if (store.config.multiplierEndsAt < Date.now()) return 1
-    return store.config.multiplier
+export function useRepo(event: H3Event) {
+  const sb = serverSupabaseServiceRole(event)
+
+  async function getConfigRow(): Promise<ConfigRow> {
+    const { data, error } = await sb.from('game_config').select('*').eq('id', 1).single()
+    if (error) throw error
+    return data as unknown as ConfigRow
+  }
+
+  async function currentMultiplier(): Promise<number> {
+    const cfg = rowToConfig(await getConfigRow())
+    return cfg.multiplier
+  }
+
+  async function log(playerId: string, code: string, awarded: number, multiplier: number, isSuper: boolean) {
+    const { error } = await sb.from('code_redemptions').insert({
+      player_id: playerId, code, awarded, multiplier, is_super: isSuper,
+    })
+    if (error) throw error
   }
 
   return {
-    listPlayers(): Player[] {
-      return [...store.players].sort((a, b) => b.points - a.points)
+    async listPlayers(): Promise<Player[]> {
+      const { data, error } = await sb.from('players').select('*').order('points', { ascending: false })
+      if (error) throw error
+      return (data as unknown as PlayerRow[]).map(rowToPlayer)
     },
-    getPlayerByName(name: string): Player | null {
-      return store.players.find(p => p.name === name) ?? null
+
+    async getPlayerById(id: string): Promise<Player | null> {
+      const { data, error } = await sb.from('players').select('*').eq('id', id).maybeSingle()
+      if (error) throw error
+      return data ? rowToPlayer(data as unknown as PlayerRow) : null
     },
-    getPlayerById(id: string): Player | null {
-      return store.players.find(p => p.id === id) ?? null
-    },
-    getPlayerByUserId(userId: string): Player | null {
-      return store.players.find(p => p.userId === userId) ?? null
-    },
-    getPlayerByEmail(email: string): Player | null {
-      const e = email.toLowerCase()
-      return store.players.find(p => p.email === e) ?? null
+
+    async getPlayerByUserId(userId: string): Promise<Player | null> {
+      const { data, error } = await sb.from('players').select('*').eq('user_id', userId).maybeSingle()
+      if (error) throw error
+      return data ? rowToPlayer(data as unknown as PlayerRow) : null
     },
 
     /**
-     * Resolves a Supabase user to their player row, keyed on userId. The
-     * display name + email are synced from the auth identity on every call,
-     * so a user's leaderboard name always tracks who they're signed in as
-     * (no stale or seed-derived names sticking around after dev iterations).
-     * Seed players are leaderboard decoys — they are never claimed by email.
+     * Resolves a Supabase user to their player row, creating one on first
+     * sign-in. Display name + email + avatar are synced from the auth identity
+     * on every call so the leaderboard tracks whoever's signed in.
      */
-    ensurePlayerForUser(user: { id: string; email?: string | null; name?: string | null; avatar?: string | null; avatarUrl?: string | null }): Player {
-      const email = user.email?.toLowerCase() ?? ''
-      const name = user.name?.trim() || (email ? email.split('@')[0]! : 'Anonymous')
-      const avatarUrl = user.avatarUrl?.trim() || undefined
-      const existing = store.players.find(x => x.userId === user.id)
+    async ensurePlayerForUser(user: {
+      id: string
+      email?: string | null
+      name?: string | null
+      avatar?: string | null
+      avatarUrl?: string | null
+    }): Promise<Player> {
+      const email = user.email?.toLowerCase() ?? null
+      const name = (user.name?.trim() || (email ? email.split('@')[0]! : 'Anonymous'))!
+      const avatar = user.avatar || '🦊'
+      const avatarUrl = user.avatarUrl?.trim() || null
+
+      const { data: existing, error: selErr } = await sb
+        .from('players').select('*').eq('user_id', user.id).maybeSingle()
+      if (selErr) throw selErr
+
       if (existing) {
-        existing.name = name
-        existing.avatarUrl = avatarUrl
-        if (email) existing.email = email
-        return existing
+        const patch: Record<string, unknown> = { name, avatar_url: avatarUrl }
+        if (email) patch.email = email
+        const { data: updated, error: updErr } = await sb
+          .from('players').update(patch).eq('id', existing.id).select('*').single()
+        if (updErr) throw updErr
+        return rowToPlayer(updated as unknown as PlayerRow)
       }
-      const fresh: Player = {
-        id: `u${store.players.length + 1}-${user.id.slice(0, 6)}`,
-        userId: user.id,
-        email: email || undefined,
-        name,
-        avatar: user.avatar || '🦊',
-        avatarUrl,
-        points: 0,
-        victories: 0,
-        gems: 0,
-        latest: 'Joined the migration',
-      }
-      store.players.push(fresh)
-      return fresh
+
+      const { data: inserted, error: insErr } = await sb
+        .from('players')
+        .insert({
+          user_id: user.id,
+          email,
+          name,
+          avatar,
+          avatar_url: avatarUrl,
+          latest: 'Joined the migration',
+        })
+        .select('*').single()
+      if (insErr) throw insErr
+      return rowToPlayer(inserted as unknown as PlayerRow)
     },
-    getCode(code: string): Code | null {
-      return store.codes.find(c => c.code === code) ?? null
+
+    async getCode(code: string): Promise<Code | null> {
+      const { data, error } = await sb.from('codes').select('*').eq('code', code).maybeSingle()
+      if (error) throw error
+      return data ? rowToCode(data as unknown as CodeRow) : null
     },
-    listCodes(): Code[] {
-      return [...store.codes]
+
+    async listCodes(): Promise<Code[]> {
+      const { data, error } = await sb.from('codes').select('*').order('code')
+      if (error) throw error
+      return (data as unknown as CodeRow[]).map(rowToCode)
     },
-    getConfig(): GameConfig {
-      // expose the live multiplier (it auto-decays when the timer expires)
-      return { ...store.config, multiplier: currentMultiplier() }
+
+    async getConfig(): Promise<GameConfig> {
+      return rowToConfig(await getConfigRow())
     },
+
     currentMultiplier,
 
-    setMultiplier(n: number, minutes: number): GameConfig {
-      store.config.multiplier = n
-      store.config.multiplierEndsAt = n > 1 && minutes > 0
-        ? Date.now() + minutes * 60_000
-        : null
-      return { ...store.config }
-    },
-    clearMultiplier(): GameConfig {
-      store.config.multiplier = 1
-      store.config.multiplierEndsAt = null
-      return { ...store.config }
-    },
-    setSuperCode(code: string): GameConfig {
-      if (!store.codes.find(c => c.code === code)) throw new Error('unknown code')
-      store.codes.forEach(c => { c.isSuperCode = false })
-      const target = store.codes.find(c => c.code === code)!
-      target.isSuperCode = true
-      target.singleUse = true
-      target.type = 'super'
-      target.isUsed = false
-      target.usedBy = undefined
-      target.usedAt = undefined
-      store.config.superCode = code
-      store.config.superWinner = null
-      store.config.superWonAt = null
-      return { ...store.config }
+    async setMultiplier(n: number, minutes: number): Promise<GameConfig> {
+      const endsAt = n > 1 && minutes > 0 ? new Date(Date.now() + minutes * 60_000).toISOString() : null
+      const { data, error } = await sb.from('game_config')
+        .update({ multiplier: n, multiplier_ends_at: endsAt }).eq('id', 1).select('*').single()
+      if (error) throw error
+      return rowToConfig(data as unknown as ConfigRow)
     },
 
-    adjustPoints(playerId: string, delta: number): Player | null {
-      const p = store.players.find(p => p.id === playerId)
+    async clearMultiplier(): Promise<GameConfig> {
+      const { data, error } = await sb.from('game_config')
+        .update({ multiplier: 1, multiplier_ends_at: null }).eq('id', 1).select('*').single()
+      if (error) throw error
+      return rowToConfig(data as unknown as ConfigRow)
+    },
+
+    async setSuperCode(code: string): Promise<GameConfig> {
+      const { data: target, error: getErr } = await sb.from('codes').select('*').eq('code', code).maybeSingle()
+      if (getErr) throw getErr
+      if (!target) throw new Error('unknown code')
+
+      // Clear is_super_code on all codes, then mark this one super.
+      const { error: clrErr } = await sb.from('codes').update({ is_super_code: false }).neq('code', '__none__')
+      if (clrErr) throw clrErr
+      const { error: upErr } = await sb.from('codes').update({
+        is_super_code: true, single_use: true, type: 'super', is_used: false, used_by: null, used_at: null,
+      }).eq('code', code)
+      if (upErr) throw upErr
+
+      const { data: cfg, error: cfgErr } = await sb.from('game_config')
+        .update({ super_code: code, super_winner: null, super_won_at: null }).eq('id', 1).select('*').single()
+      if (cfgErr) throw cfgErr
+      return rowToConfig(cfg as unknown as ConfigRow)
+    },
+
+    async adjustPoints(playerId: string, delta: number): Promise<Player | null> {
+      const { data: p, error: getErr } = await sb.from('players').select('*').eq('id', playerId).maybeSingle()
+      if (getErr) throw getErr
       if (!p) return null
-      p.points = Math.max(0, p.points + delta)
-      p.latest = `Admin ${delta >= 0 ? '+' : ''}${delta}`
-      return { ...p }
+      const row = p as unknown as PlayerRow
+      const newPoints = Math.max(0, row.points + delta)
+      const { data: upd, error: upErr } = await sb.from('players')
+        .update({ points: newPoints, latest: `Admin ${delta >= 0 ? '+' : ''}${delta}` })
+        .eq('id', playerId).select('*').single()
+      if (upErr) throw upErr
+      return rowToPlayer(upd as unknown as PlayerRow)
     },
 
-    redeemPoint(player: Player, code: Code) {
-      const multiplier = currentMultiplier()
+    async redeemPoint(player: Player, code: Code) {
+      const multiplier = await currentMultiplier()
       const awarded = Math.round(code.value * multiplier)
       const gemsBefore = player.gems
-      player.gems = Math.min(5, player.gems + 1)
-      player.points += awarded
-      player.latest = `Code ${code.code} · +${awarded}`
-      this._log(player.id, code.code, awarded, multiplier, false)
+      const gems = Math.min(5, gemsBefore + 1)
+      const points = player.points + awarded
+      const latest = `Code ${code.code} · +${awarded}`
+      const { error } = await sb.from('players').update({ points, gems, latest }).eq('id', player.id)
+      if (error) throw error
+      await log(player.id, code.code, awarded, multiplier, false)
       return {
         awarded, multiplier,
-        gemUnlocked: player.gems > gemsBefore,
-        clueUnlocked: player.gems >= 5 && gemsBefore < 5,
+        gemUnlocked: gems > gemsBefore,
+        clueUnlocked: gems >= 5 && gemsBefore < 5,
       }
     },
 
-    redeemVictory(player: Player, code: Code) {
-      const multiplier = currentMultiplier()
+    async redeemVictory(player: Player, code: Code) {
+      const multiplier = await currentMultiplier()
       const awarded = Math.round(code.value * multiplier)
       const before = player.victories
-      player.victories = Math.min(5, player.victories + 1)
-      player.points += awarded
-      player.latest = `Won ${code.code} · +${awarded}`
-      code.isUsed = true
-      code.usedBy = player.id
-      code.usedAt = Date.now()
-      this._log(player.id, code.code, awarded, multiplier, false)
+      const victories = Math.min(5, before + 1)
+      const points = player.points + awarded
+      const latest = `Won ${code.code} · +${awarded}`
+      const { error } = await sb.from('players').update({ points, victories, latest }).eq('id', player.id)
+      if (error) throw error
+      const { error: ucErr } = await sb.from('codes').update({
+        is_used: true, used_by: player.id, used_at: new Date().toISOString(),
+      }).eq('code', code.code)
+      if (ucErr) throw ucErr
+      await log(player.id, code.code, awarded, multiplier, false)
       return {
         awarded, multiplier,
-        victories: player.victories,
-        clueUnlocked: player.victories >= 5 && before < 5,
+        victories,
+        clueUnlocked: victories >= 5 && before < 5,
       }
     },
 
-    redeemSuper(player: Player, code: Code) {
+    async redeemSuper(player: Player, code: Code) {
       if (player.victories < 5) return { ok: false as const, reason: 'locked' as const }
-      if (code.isUsed) {
-        const winner = code.usedBy ? this.getPlayerById(code.usedBy) : null
+
+      // Race-safe claim: only the first writer where super_winner is null wins.
+      const nowIso = new Date().toISOString()
+      const { data: claimed, error: claimErr } = await sb.from('game_config')
+        .update({ super_winner: player.id, super_won_at: nowIso })
+        .eq('id', 1).is('super_winner', null).select('*').maybeSingle()
+      if (claimErr) throw claimErr
+
+      if (!claimed) {
+        // Someone else won. Surface who.
+        const { data: cfg } = await sb.from('game_config').select('super_winner').eq('id', 1).single()
+        const winnerId = (cfg as { super_winner: string | null } | null)?.super_winner ?? null
+        const winner = winnerId
+          ? await this.getPlayerById(winnerId)
+          : null
         return { ok: false as const, reason: 'taken' as const, winnerName: winner?.name ?? null }
       }
+
       const awarded = code.value || 1000
-      player.points += awarded
-      player.latest = `Found the Super Code · +${awarded}`
-      code.isUsed = true
-      code.usedBy = player.id
-      code.usedAt = Date.now()
-      store.config.superWinner = player.id
-      store.config.superWonAt = Date.now()
-      this._log(player.id, code.code, awarded, 1, true)
+      const { error: pErr } = await sb.from('players').update({
+        points: player.points + awarded,
+        latest: `Found the Super Code · +${awarded}`,
+      }).eq('id', player.id)
+      if (pErr) throw pErr
+      const { error: cErr } = await sb.from('codes').update({
+        is_used: true, used_by: player.id, used_at: nowIso,
+      }).eq('code', code.code)
+      if (cErr) throw cErr
+      await log(player.id, code.code, awarded, 1, true)
       return { ok: true as const, awarded, winnerName: player.name }
     },
 
-    /** True if this player has already received points for `codeRef`. */
-    hasSolvedCode(playerId: string, codeRef: string): boolean {
-      return store.redemptions.some(r => r.playerId === playerId && r.code === codeRef && r.awarded > 0)
-    },
-    /** Count of distinct players who have solved `codeRef`. Drives first-mover tiers. */
-    distinctSolverCount(codeRef: string): number {
-      const seen = new Set<string>()
-      for (const r of store.redemptions) {
-        if (r.code === codeRef && r.awarded > 0) seen.add(r.playerId)
-      }
-      return seen.size
+    async hasSolvedCode(playerId: string, codeRef: string): Promise<boolean> {
+      const { count, error } = await sb.from('code_redemptions')
+        .select('id', { count: 'exact', head: true })
+        .eq('player_id', playerId).eq('code', codeRef).gt('awarded', 0)
+      if (error) throw error
+      return (count ?? 0) > 0
     },
 
-    redeemMinigameResult(player: Player, codeRef: string, base: number) {
+    async distinctSolverCount(codeRef: string): Promise<number> {
+      // Distinct players who got >0 from this code. supabase-js doesn't expose
+      // `distinct` directly; we read player_ids and dedupe in memory. Cardinality
+      // is bounded by the office size, so this is fine.
+      const { data, error } = await sb.from('code_redemptions')
+        .select('player_id').eq('code', codeRef).gt('awarded', 0)
+      if (error) throw error
+      const ids = new Set((data ?? []).map((r: { player_id: string }) => r.player_id))
+      return ids.size
+    },
+
+    async redeemMinigameResult(player: Player, codeRef: string, base: number) {
       if (base === 0) return { awarded: 0, multiplier: 1, gemUnlocked: false, clueUnlocked: false }
-      const multiplier = currentMultiplier()
+      const multiplier = await currentMultiplier()
       const awarded = Math.round(base * multiplier)
       const gemsBefore = player.gems
-      player.gems = Math.min(5, player.gems + 1)
-      player.points += awarded
-      player.latest = `${codeRef} resolved · +${awarded}`
-      this._log(player.id, codeRef, awarded, multiplier, false)
+      const gems = Math.min(5, gemsBefore + 1)
+      const points = player.points + awarded
+      const latest = `${codeRef} resolved · +${awarded}`
+      const { error } = await sb.from('players').update({ points, gems, latest }).eq('id', player.id)
+      if (error) throw error
+      await log(player.id, codeRef, awarded, multiplier, false)
       return {
         awarded, multiplier,
-        gemUnlocked: player.gems > gemsBefore,
-        clueUnlocked: player.gems >= 5 && gemsBefore < 5,
+        gemUnlocked: gems > gemsBefore,
+        clueUnlocked: gems >= 5 && gemsBefore < 5,
       }
     },
 
-    superWinner(): { name: string; at: number } | null {
-      if (!store.config.superWinner) return null
-      const p = this.getPlayerById(store.config.superWinner)
-      if (!p || !store.config.superWonAt) return null
-      return { name: p.name, at: store.config.superWonAt }
+    async superWinner(): Promise<{ name: string; at: number } | null> {
+      const cfg = await this.getConfig()
+      if (!cfg.superWinner || !cfg.superWonAt) return null
+      const p = await this.getPlayerById(cfg.superWinner)
+      return p ? { name: p.name, at: cfg.superWonAt } : null
     },
 
-    clearSuperWinner() {
-      store.config.superWinner = null
-      store.config.superWonAt = null
-    },
-
-    _log(playerId: string, code: string, awarded: number, multiplier: number, isSuper: boolean) {
-      store.redemptions.push({
-        id: `r${store.redemptions.length + 1}`,
-        playerId, code, awarded, multiplier, isSuper,
-        redeemedAt: Date.now(),
-      })
+    async clearSuperWinner(): Promise<void> {
+      const { error } = await sb.from('game_config')
+        .update({ super_winner: null, super_won_at: null }).eq('id', 1)
+      if (error) throw error
     },
   }
 }

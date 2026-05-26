@@ -24,16 +24,16 @@ pnpm typecheck  # nuxt typecheck (vue-tsc)
 
 ## Architecture
 
-**Server is the source of truth.** Nitro API routes (`server/api/**`) only ever talk to `useRepo()` (`server/utils/repo.ts`), an in-memory data layer pre-seeded with demo players + codes. Minigame components emit a `base` value; the server applies the multiplier and writes the result — clients cannot self-award.
+**Server is the source of truth.** Nitro API routes (`server/api/**`) only ever talk to `useRepo(event)` (`server/utils/repo.ts`), a Supabase-backed data layer reading/writing `public.players`, `public.codes`, `public.code_redemptions`, and the singleton `public.game_config` row. Schema in `db/schema.sql`, code-catalog seed in `db/seed.sql` (no demo players — real users are created on first sign-in). Minigame components emit a `base` value; the server applies the multiplier and writes the result — clients cannot self-award. Repo methods are async; super-code claim is race-safe via `update … where super_winner is null`.
 
 **Client state is rstore.** All data + form state goes through `@rstore/nuxt`. There is no Pinia. Collections live in `app/rstore/*.ts`, plugins in `app/rstore/plugins/*.ts`, both auto-scanned by the module. Two plugins back three collections:
 
 - `app/rstore/plugins/supabase-auth.ts` — wires the `session` and `currentUser` collections to Supabase Auth (`signInWithPassword`, `getUser`, `updateUser`, `signOut`).
 - `app/rstore/plugins/nitro-api.ts` — wires the `gameState` collection's `fetchFirst` hook to `GET /api/state`.
 
-`app/composables/useGame.ts` is the thin call-site composable wrapping `store.gameState.query(q => q.first('current'))` + a visibility-aware poll (`useDocumentVisibility` + `useIntervalFn`) that pauses when the tab is hidden. It returns a `reactive()` mirroring the old Pinia getter shape (me/config/players/superWinner/activeMultiplier/isMultiplierActive/clueUnlocked/sortedPlayers) so call sites just do `const game = useGame()` and access fields without `.value`.
+`app/composables/useGame.ts` is the thin call-site composable wrapping `store.gameState.query(q => q.first('current'))` plus a **Supabase realtime subscription** on `players`, `game_config`, and `code_redemptions`. Any DB change triggers a `refresh()` of the snapshot — no polling. The channel is scoped to the calling component via `onScopeDispose`. It returns a `reactive()` mirroring the old Pinia getter shape (me/config/players/superWinner/activeMultiplier/isMultiplierActive/clueUnlocked/sortedPlayers) so call sites just do `const game = useGame()` and access fields without `.value`.
 
-**Identity comes from the Supabase session.** Player rows are linked to Supabase users by `userId`. On every resolve, `repo.ensurePlayerForUser()` syncs the row's `name` + `email` + `avatarUrl` from the auth identity — there is no separate name-edit flow at the player-row level, and no email-match seed reclaim (so seed players stay decoys on the leaderboard). The display name comes from `user_metadata.display_name`, falling back to the raw email. Avatars come from `user_metadata.avatar_url` (a public URL in the `avatars` Storage bucket). Server routes resolve identity via `currentPlayer(event)` (nullable, for reads) or `requirePlayer(event)` (throws 401, for writes). **No client request carries a `playerName` field** — the session is authoritative.
+**Identity comes from the Supabase session.** Player rows are linked to Supabase users via `players.user_id`. On every resolve, `repo.ensurePlayerForUser()` syncs the row's `name` + `email` + `avatar_url` from the auth identity — there is no separate name-edit flow at the player-row level. The display name comes from `user_metadata.display_name`, falling back to the raw email. Avatars come from `user_metadata.avatar_url` (a public URL in the `avatars` Storage bucket). Server routes resolve identity via `currentPlayer(event)` (nullable, for reads) or `requirePlayer(event)` (throws 401, for writes). **No client request carries a `playerName` field** — the session is authoritative.
 
 **Auth surface (Supabase email/password):**
 - `/admin` page + `/api/admin/*` + `/api/super-event/dismiss` require an email in `ADMIN_EMAILS`. Dual-layered: `app/middleware/admin.ts` is UX (redirects), `server/utils/supabase.ts → isAdminRequest()` is the security gate.
@@ -42,10 +42,10 @@ pnpm typecheck  # nuxt typecheck (vue-tsc)
 - `/login` uses `store.session.createForm({ schema })` (valibot) backed by the supabase-auth plugin; on success the user is bounced to the cookie-stored original destination via `useSupabaseCookieRedirect().pluck()`.
 - Admin nav link is hidden from non-admin sessions in `AppNav`; the same nav re-renders in a `USlideover` triggered by a `md:hidden` hamburger.
 
-**Move-to-Supabase-DB swap path** (auth is already on Supabase; the data layer is still in-memory):
-1. Run `db/schema.sql` + `db/seed.sql`.
-2. Swap the body of `server/utils/repo.ts` for a Supabase-backed implementation exposing the same methods — API routes don't import any Supabase client directly.
-3. In `app/rstore/plugins/nitro-api.ts`, swap the polling-based `fetchFirst` for an rstore `subscribe` hook backed by a Supabase realtime channel on `players` + `game_config`. Drop the `useIntervalFn` in `useGame.ts`.
+**Bootstrap a fresh Supabase project**:
+1. Run `db/schema.sql` + `db/seed.sql` in the SQL Editor (both are idempotent).
+2. Confirm the `supabase_realtime` publication includes `players`, `game_config`, `code_redemptions` (the schema does this on first run).
+3. Run `pnpm setup:visma-connect` to register the OIDC provider.
 
 **Super Code flow** (in `repo.ts`):
 - Victory codes (`DART-WIN`, …) bump `players.victories` and award `150 × multiplier`.

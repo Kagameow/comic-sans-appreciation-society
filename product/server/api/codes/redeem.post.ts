@@ -4,13 +4,12 @@ export default defineEventHandler(async (event) => {
   if (!code) throw createError({ statusCode: 400, message: 'code required' })
 
   const player = await requirePlayer(event)
-  const repo = useRepo()
-  const row = repo.getCode(code)
+  const repo = useRepo(event)
+  const row = await repo.getCode(code)
   if (!row) return { kind: 'invalid' as const }
 
-  // ─── super code ──────────────────────────────────────────────────────────
   if (row.isSuperCode) {
-    const result = repo.redeemSuper(player, row)
+    const result = await repo.redeemSuper(player, row)
     if (!result.ok) {
       if (result.reason === 'taken') {
         return { kind: 'super' as const, awarded: 0, alreadyWonBy: result.winnerName }
@@ -23,12 +22,12 @@ export default defineEventHandler(async (event) => {
   if (row.singleUse && row.isUsed) return { kind: 'invalid' as const }
 
   if (row.type === 'victory') {
-    const r = repo.redeemVictory(player, row)
+    const r = await repo.redeemVictory(player, row)
     return { kind: 'victory' as const, ...r }
   }
 
   if (row.type === 'point') {
-    const r = repo.redeemPoint(player, row)
+    const r = await repo.redeemPoint(player, row)
     return { kind: 'point' as const, ...r }
   }
 

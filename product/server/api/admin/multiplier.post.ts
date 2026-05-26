@@ -1,4 +1,3 @@
-
 export default defineEventHandler(async (event) => {
   if (!(await isAdminRequest(event))) throw createError({ statusCode: 403, message: 'admin only' })
   const body = await readBody<{ multiplier?: number; minutes?: number }>(event)
@@ -8,7 +7,7 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'multiplier out of range' })
   }
 
-  const repo = useRepo()
-  if (multiplier <= 1) return { ok: true, config: repo.clearMultiplier() }
-  return { ok: true, config: repo.setMultiplier(multiplier, Math.max(0, Math.min(240, minutes))) }
+  const repo = useRepo(event)
+  if (multiplier <= 1) return { ok: true, config: await repo.clearMultiplier() }
+  return { ok: true, config: await repo.setMultiplier(multiplier, Math.max(0, Math.min(240, minutes))) }
 })

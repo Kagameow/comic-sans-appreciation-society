@@ -1,9 +1,12 @@
 /**
- * Reactive game snapshot driven by rstore + a visibility-aware poll.
- * Drop-in replacement for the legacy `useGameStore()` + `useGameSync()`
- * combo. Returns refs/computeds (so script callers use `.value`, templates
- * auto-unwrap) mirroring the old Pinia getters plus a `refresh()` to
- * force-pull the snapshot.
+ * Reactive game snapshot driven by rstore + a Supabase realtime subscription.
+ *
+ * On setup we open a single realtime channel that listens to changes on
+ * `players`, `game_config`, and `code_redemptions`. Any change fires a
+ * `refresh()` of the `gameState` collection, which re-pulls `/api/state`.
+ * This replaces the prior polling loop — the leaderboard / TV updates within
+ * a few hundred milliseconds of any redemption, multiplier change, or super
+ * code claim.
  */
 import { TOTAL_GEMS, TOTAL_VICTORIES } from '#shared/constants/game'
 import type { ConfigSnapshot, Player, SuperEvent } from '#shared/types/game'
@@ -16,8 +19,9 @@ const DEFAULT_CONFIG: ConfigSnapshot = {
   superWonAt: null,
 }
 
-export function useGame(intervalMs = 3000) {
+export function useGame() {
   const store = useStore()
+  const supabase = useSupabaseClient()
   const { data, refresh } = store.gameState.query(q => q.first('current'))
 
   const config = computed<ConfigSnapshot>(() => data.value?.config ?? DEFAULT_CONFIG)
@@ -39,16 +43,17 @@ export function useGame(intervalMs = 3000) {
   })
   const sortedPlayers = computed(() => [...players.value].sort((a, b) => b.points - a.points))
 
-  const visibility = useDocumentVisibility()
-  const { pause, resume } = useIntervalFn(
-    () => { refresh() },
-    intervalMs,
-    { immediate: false },
-  )
-  watchEffect(() => {
-    if (visibility.value === 'visible') resume()
-    else pause()
-  })
+  // Realtime: one channel, three tables. Any change → refetch the snapshot.
+  // `Date.now()` in the channel name avoids cross-HMR collisions during dev.
+  if (import.meta.client) {
+    const channel = supabase
+      .channel(`game-state-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'players' },          () => { void refresh() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_config' },      () => { void refresh() })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'code_redemptions' }, () => { void refresh() })
+      .subscribe()
+    onScopeDispose(() => { void supabase.removeChannel(channel) })
+  }
 
   async function dismissSuperEvent() {
     await $fetch('/api/super-event/dismiss', { method: 'POST' }).catch(() => {})
