@@ -42,7 +42,7 @@ const codeForm = createFormObject({
           :disabled="lockout.locked.value"
           autofocus
           size="xl"
-          :placeholder="lockout.locked.value ? 'LOCKED' : 'V3-READY'"
+          :placeholder="lockout.locked.value ? 'LOCKED' : 'ENTER A CODE'"
           class="w-full"
           :ui="{ base: 'ticker-mono tracking-wider uppercase text-xl sm:text-2xl py-4 sm:py-5' }"
           @update:model-value="codeForm.code = String($event ?? '').toUpperCase()"
