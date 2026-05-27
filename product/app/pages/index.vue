@@ -10,25 +10,27 @@ const showClueCta = computed(() => game.clueUnlocked && !game.superWinner)
 <template>
   <div>
     <div class="container mx-auto max-w-3xl px-3 sm:px-6 py-6 sm:py-12">
-      <RedeemSignInGate v-if="!isSignedIn" />
+      <ClientOnly>
+        <RedeemSignInGate v-if="!isSignedIn" />
 
-      <template v-else-if="redeem.mode.value === 'input'">
-        <RedeemHeroBanner />
-        <RedeemGemsTracker :filled="filledGems" />
+        <template v-else-if="redeem.mode.value === 'input'">
+          <RedeemHeroBanner />
+          <RedeemGemsTracker :filled="filledGems" />
 
-        <RedeemClueCta v-if="showClueCta" @click="redeem.showClueModal.value = true" />
+          <RedeemClueCta v-if="showClueCta" @click="redeem.showClueModal.value = true" />
 
-        <RedeemCodeInput :lockout="redeem.lockout" @submit="redeem.submit" />
+          <RedeemCodeInput :lockout="redeem.lockout" @submit="redeem.submit" />
 
-        <RedeemAwardFlash v-if="redeem.flash.value" v-bind="redeem.flash.value" />
-      </template>
+          <RedeemAwardFlash v-if="redeem.flash.value" v-bind="redeem.flash.value" />
+        </template>
 
-      <RedeemMinigameHost
-        v-else
-        :mode="redeem.mode.value"
-        :code-ref="redeem.activeMinigame.value?.codeRef"
-        @resolve="redeem.resolveMinigame"
-      />
+        <RedeemMinigameHost
+          v-else
+          :mode="redeem.mode.value"
+          :code-ref="redeem.activeMinigame.value?.codeRef"
+          @resolve="redeem.resolveMinigame"
+        />
+      </ClientOnly>
     </div>
 
     <RedeemMasterClueModal v-model:open="redeem.showClueModal.value" />

@@ -22,11 +22,13 @@ export default defineRstorePlugin({
   name: 'supabase-auth',
   category: 'remote',
   setup({ hook }) {
+    const nuxtApp = useNuxtApp()
+    const getClient = () => nuxtApp.$supabase.client
+
     hook('fetchFirst', async (payload) => {
       const name = payload.collection.name
       if (name !== 'session' && name !== 'currentUser') return
-      const supabase = useSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getClient().auth.getUser()
       if (name === 'session') {
         payload.setResult(user ? { id: 'current' } : undefined)
         return
@@ -36,9 +38,8 @@ export default defineRstorePlugin({
 
     hook('updateItem', async (payload) => {
       if (payload.collection.name !== 'currentUser') return
-      const supabase = useSupabaseClient()
       const patch = payload.item as Partial<{ display_name: string; avatar_url: string | null }>
-      const { data, error } = await supabase.auth.updateUser({ data: patch })
+      const { data, error } = await getClient().auth.updateUser({ data: patch })
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
       if (next) payload.setResult(next)
@@ -47,16 +48,15 @@ export default defineRstorePlugin({
       // so useSupabaseUser() consumers (PlayerBadgeMenu avatar/display name)
       // keep showing pre-update values. Refresh, then push fresh claims into
       // the reactive ref so the UI updates immediately.
-      await supabase.auth.refreshSession()
-      const { data: claimsData } = await supabase.auth.getClaims()
+      await getClient().auth.refreshSession()
+      const { data: claimsData } = await getClient().auth.getClaims()
       const userRef = useSupabaseUser()
       userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
     })
 
     hook('deleteItem', async (payload) => {
       if (payload.collection.name !== 'session') return
-      const supabase = useSupabaseClient()
-      await supabase.auth.signOut()
+      await getClient().auth.signOut()
     })
   },
 })
