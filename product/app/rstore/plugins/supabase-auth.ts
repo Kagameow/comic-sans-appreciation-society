@@ -4,6 +4,14 @@
  * `currentUser` writes user_metadata; deleteItem on `session` signs out.
  * Sign-in is no longer here — Visma Connect is OIDC, so login.vue calls
  * supabase.auth.signInWithOAuth directly and the browser navigates away.
+ *
+ * Nuxt context note: rstore hooks fire asynchronously, after the originating
+ * setup function has returned. On the server that means useSupabaseClient()
+ * would throw "called outside of a plugin, Nuxt hook, …" because the request
+ * scope is no longer the current async context. We capture `nuxtApp` at
+ * plugin install time (which IS inside Nuxt context, since rstore-nuxt
+ * installs us from a Nuxt plugin) and re-enter that context inside each hook
+ * via runWithContext().
  */
 import type { User } from '@supabase/supabase-js'
 
@@ -22,10 +30,13 @@ export default defineRstorePlugin({
   name: 'supabase-auth',
   category: 'remote',
   setup({ hook }) {
+    const nuxtApp = useNuxtApp()
+    const withCtx = <T>(fn: () => T) => nuxtApp.runWithContext(fn)
+
     hook('fetchFirst', async (payload) => {
       const name = payload.collection.name
       if (name !== 'session' && name !== 'currentUser') return
-      const supabase = useSupabaseClient()
+      const supabase = withCtx(() => useSupabaseClient())
       const { data: { user } } = await supabase.auth.getUser()
       if (name === 'session') {
         payload.setResult(user ? { id: 'current' } : undefined)
@@ -36,7 +47,7 @@ export default defineRstorePlugin({
 
     hook('updateItem', async (payload) => {
       if (payload.collection.name !== 'currentUser') return
-      const supabase = useSupabaseClient()
+      const supabase = withCtx(() => useSupabaseClient())
       const patch = payload.item as Partial<{ display_name: string; avatar_url: string | null }>
       const { data, error } = await supabase.auth.updateUser({ data: patch })
       if (error) throw new Error(error.message)
@@ -49,13 +60,13 @@ export default defineRstorePlugin({
       // the reactive ref so the UI updates immediately.
       await supabase.auth.refreshSession()
       const { data: claimsData } = await supabase.auth.getClaims()
-      const userRef = useSupabaseUser()
+      const userRef = withCtx(() => useSupabaseUser())
       userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
     })
 
     hook('deleteItem', async (payload) => {
       if (payload.collection.name !== 'session') return
-      const supabase = useSupabaseClient()
+      const supabase = withCtx(() => useSupabaseClient())
       await supabase.auth.signOut()
     })
   },
