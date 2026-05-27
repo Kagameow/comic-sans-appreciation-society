@@ -9,7 +9,7 @@ import type { Player } from '#shared/types/game'
  */
 export async function currentPlayer(event: H3Event): Promise<Player | null> {
   const user = await serverSupabaseUser(event).catch(() => null)
-  if (!user) return null
+  if (!user || !user.id) return null
   return useRepo(event).ensurePlayerForUser({
     id: user.id,
     email: user.email,

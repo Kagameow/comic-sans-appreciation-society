@@ -84,7 +84,7 @@ function rowToConfig(row: ConfigRow): GameConfig {
     multiplier: expired ? 1 : Number(row.multiplier ?? 1),
     multiplierEndsAt: expired ? null : endsAt,
     superCode: row.super_code ?? null,
-    superWinner: row.super_winner ?? null,
+    superWinner: (row.super_winner && row.super_winner !== 'undefined') ? row.super_winner : null,
     superWonAt: row.super_won_at ? new Date(row.super_won_at).getTime() : null,
   }
 }
@@ -118,12 +118,14 @@ export function useRepo(event: H3Event) {
     },
 
     async getPlayerById(id: string): Promise<Player | null> {
+      if (!id || id === 'undefined') return null
       const { data, error } = await sb.from('players').select('*').eq('id', id).maybeSingle()
       if (error) throw error
       return data ? rowToPlayer(data as unknown as PlayerRow) : null
     },
 
     async getPlayerByUserId(userId: string): Promise<Player | null> {
+      if (!userId || userId === 'undefined') return null
       const { data, error } = await sb.from('players').select('*').eq('user_id', userId).maybeSingle()
       if (error) throw error
       return data ? rowToPlayer(data as unknown as PlayerRow) : null
@@ -141,6 +143,7 @@ export function useRepo(event: H3Event) {
       avatar?: string | null
       avatarUrl?: string | null
     }): Promise<Player> {
+      if (!user.id) throw new Error('user.id is required')
       const email = user.email?.toLowerCase() ?? null
       const name = (user.name?.trim() || (email ? email.split('@')[0]! : 'Anonymous'))!
       const avatar = user.avatar || '🦊'
