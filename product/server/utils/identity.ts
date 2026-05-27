@@ -1,4 +1,4 @@
-import { serverSupabaseUser } from '#supabase/server'
+import { serverSupabaseUser, serverSupabaseServiceRole } from '#supabase/server'
 import type { H3Event } from 'h3'
 import type { Player } from '#shared/types/game'
 
@@ -8,7 +8,22 @@ import type { Player } from '#shared/types/game'
  * whether that's an error (write endpoints) or a soft "no player" (state read).
  */
 export async function currentPlayer(event: H3Event): Promise<Player | null> {
-  const user = await serverSupabaseUser(event).catch(() => null)
+  // First try to get user from cookies (standard Supabase auth flow)
+  let user = await serverSupabaseUser(event).catch(() => null)
+
+  // If cookies fail, try Authorization header (manual token passing)
+  if (!user || !user.id) {
+    const authHeader = getHeader(event, 'authorization')
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.slice(7)
+      const supabase = serverSupabaseServiceRole(event)
+      const { data: { user: authUser }, error } = await supabase.auth.getUser(token)
+      if (!error && authUser) {
+        user = authUser
+      }
+    }
+  }
+
   if (!user || !user.id) return null
   return useRepo(event).ensurePlayerForUser({
     id: user.id,

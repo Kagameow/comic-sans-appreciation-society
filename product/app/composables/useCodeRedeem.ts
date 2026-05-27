@@ -22,6 +22,7 @@ type AwardResponse = {
 export function useCodeRedeem() {
   const game = useGame()
   const lockout = useCodeLockout()
+  const supabase = useSupabaseClient()
 
   const mode = ref<Mode>('input')
   const activeMinigame = ref<{ codeRef: string } | null>(null)
@@ -42,9 +43,17 @@ export function useCodeRedeem() {
     const code = raw.trim().toUpperCase()
     if (!code || lockout.locked.value) return
 
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: Record<string, string> = {}
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+    }
+
     const res = await $fetch<RedeemResponse>('/api/codes/redeem', {
       method: 'POST',
       body: { code },
+      credentials: 'include',
+      headers,
     }).catch(() => ({ kind: 'invalid' as const }))
 
     await game.refresh()
@@ -77,9 +86,18 @@ export function useCodeRedeem() {
 
   async function resolveMinigame(points: number) {
     const codeRef = activeMinigame.value?.codeRef ?? 'minigame'
+
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: Record<string, string> = {}
+    if (session?.access_token) {
+      headers.Authorization = `Bearer ${session.access_token}`
+    }
+
     const res = await $fetch<AwardResponse>('/api/codes/award', {
       method: 'POST',
       body: { codeRef, base: points },
+      credentials: 'include',
+      headers,
     })
     await game.refresh()
     mode.value = 'input'
