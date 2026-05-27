@@ -1,6 +1,11 @@
 import { serverSupabaseUser } from '#supabase/server'
 import type { H3Event } from 'h3'
 
+const ADMIN_EMAILS = String(process.env.ADMIN_EMAILS ?? '')
+  .split(',')
+  .map(s => s.trim().toLowerCase())
+  .filter(Boolean)
+
 /**
  * Returns true if the request comes from an authenticated user whose email
  * is in ADMIN_EMAILS. Defense-in-depth complement to the client-side
@@ -16,12 +21,5 @@ export async function isAdminRequest(event: H3Event): Promise<boolean> {
 
 export function isAdminEmail(email: string | undefined | null): boolean {
   if (!email) return false
-  return adminEmails().includes(email.toLowerCase())
-}
-
-function adminEmails(): string[] {
-  return String(useRuntimeConfig().public.adminEmails ?? '')
-    .split(',')
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean)
+  return ADMIN_EMAILS.includes(email.toLowerCase())
 }

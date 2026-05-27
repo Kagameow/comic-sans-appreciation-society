@@ -18,6 +18,26 @@ function toCurrentUser(user: User | null) {
   }
 }
 
+// Helper to safely get Supabase client from Nuxt app
+function getSupabaseClient() {
+  try {
+    const nuxtApp = useNuxtApp()
+    return nuxtApp.$supabase?.auth || null
+  } catch {
+    return null
+  }
+}
+
+// Helper to safely get Supabase user ref from Nuxt app
+function getSupabaseUserRef() {
+  try {
+    const nuxtApp = useNuxtApp()
+    return nuxtApp._supabase?.user || null
+  } catch {
+    return null
+  }
+}
+
 export default defineRstorePlugin({
   name: 'supabase-auth',
   category: 'remote',
@@ -25,8 +45,23 @@ export default defineRstorePlugin({
     hook('fetchFirst', async (payload) => {
       const name = payload.collection.name
       if (name !== 'session' && name !== 'currentUser') return
-      const supabase = useSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
+      const supabase = getSupabaseClient()
+      if (!supabase) {
+        // Return default items when Supabase is not available
+        if (name === 'session') {
+          payload.setResult(undefined)
+        } else {
+          // Return a placeholder currentUser item to avoid "Item not found" errors
+          payload.setResult({
+            id: 'placeholder',
+            email: null,
+            display_name: '',
+            avatar_url: null,
+          })
+        }
+        return
+      }
+      const { data: { user } } = await supabase.getUser()
       if (name === 'session') {
         payload.setResult(user ? { id: 'current' } : undefined)
         return
@@ -36,27 +71,24 @@ export default defineRstorePlugin({
 
     hook('updateItem', async (payload) => {
       if (payload.collection.name !== 'currentUser') return
-      const supabase = useSupabaseClient()
+      const supabase = getSupabaseClient()
+      if (!supabase) throw new Error('Supabase not available')
       const patch = payload.item as Partial<{ display_name: string; avatar_url: string | null }>
-      const { data, error } = await supabase.auth.updateUser({ data: patch })
+      const { data, error } = await supabase.updateUser({ data: patch })
       if (error) throw new Error(error.message)
       const next = toCurrentUser(data.user)
       if (next) payload.setResult(next)
-      // updateUser patches session.user server-side + locally but does NOT
-      // re-mint the access token — the JWT still carries the old metadata,
-      // so useSupabaseUser() consumers (PlayerBadgeMenu avatar/display name)
-      // keep showing pre-update values. Refresh, then push fresh claims into
-      // the reactive ref so the UI updates immediately.
-      await supabase.auth.refreshSession()
-      const { data: claimsData } = await supabase.auth.getClaims()
-      const userRef = useSupabaseUser()
-      userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
+      await supabase.refreshSession()
+      const { data: claimsData } = await supabase.getClaims()
+      const userRef = getSupabaseUserRef()
+      if (userRef) userRef.value = (claimsData?.claims ?? null) as typeof userRef.value
     })
 
     hook('deleteItem', async (payload) => {
       if (payload.collection.name !== 'session') return
-      const supabase = useSupabaseClient()
-      await supabase.auth.signOut()
+      const supabase = getSupabaseClient()
+      if (!supabase) return
+      await supabase.signOut()
     })
   },
 })

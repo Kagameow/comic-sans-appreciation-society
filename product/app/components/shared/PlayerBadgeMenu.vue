@@ -73,106 +73,108 @@ watch(() => avatarForm.file, (f) => {
 </script>
 
 <template>
-  <UPopover>
-    <UButton
-      variant="ghost"
-      color="neutral"
-      class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-md border border-white/10 hover:bg-white/5"
-    >
-      <span
-        v-if="game.me"
-        class="ticker-mono text-xs sm:text-sm font-semibold text-emerald-300 whitespace-nowrap"
+  <ClientOnly>
+    <UPopover>
+      <UButton
+        variant="ghost"
+        color="neutral"
+        class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-md border border-white/10 hover:bg-white/5"
       >
-        {{ game.me.points.toLocaleString() }}<span class="hidden sm:inline"> pts</span>
-      </span>
-      <img
-        v-if="currentAvatarUrl"
-        :src="currentAvatarUrl"
-        :alt="displayName"
-        class="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover"
-      />
-      <div
-        v-else
-        class="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/10 flex items-center justify-center text-base sm:text-lg"
-      >
-        {{ game.me?.avatar ?? '👤' }}
-      </div>
-      <span
-        :class="[
-          'hidden md:inline text-xs ticker-mono truncate max-w-[160px]',
-          isAdmin ? 'text-emerald-300' : 'text-slate-300',
-        ]"
-      >
-        {{ displayName }}
-      </span>
-    </UButton>
-    <template #content>
-      <div class="p-3 w-72 space-y-3">
-        <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
-
-        <UForm
-          :state="nameForm"
-          :schema="nameForm.$schema"
-          @submit="nameForm.$submit()"
-          @error="focusFirstError"
+        <span
+          v-if="game.me"
+          class="ticker-mono text-xs sm:text-sm font-semibold text-emerald-300 whitespace-nowrap"
         >
-          <UFormField label="Display name" name="display_name">
-            <div class="flex gap-2">
-              <UInput
-                v-model="nameForm.display_name"
-                size="sm"
-                class="flex-1"
-                placeholder="Your name"
-                :disabled="nameForm.$loading"
-              />
-              <UButton
-                type="submit"
-                size="sm"
-                :loading="nameForm.$loading"
-                :disabled="!nameForm.$hasChanges()"
-              >
-                Save
-              </UButton>
-            </div>
-          </UFormField>
-          <UAlert
-            v-if="nameForm.$error"
-            color="error"
-            icon="i-lucide-circle-x"
-            :title="nameForm.$error.message"
-            class="mt-1"
-          />
-        </UForm>
-
-        <UForm
-          :state="avatarForm"
-          :schema="avatarForm.$schema"
-          @submit="avatarForm.$submit()"
+          {{ game.me.points.toLocaleString() }}<span class="hidden sm:inline"> pts</span>
+        </span>
+        <img
+          v-if="currentAvatarUrl"
+          :src="currentAvatarUrl"
+          :alt="displayName"
+          class="h-7 w-7 sm:h-8 sm:w-8 rounded-full object-cover"
+        />
+        <div
+          v-else
+          class="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-white/10 flex items-center justify-center text-base sm:text-lg"
         >
-          <UFormField label="Avatar" name="file">
-            <UFileUpload
-              v-model="avatarForm.file"
-              accept="image/*"
-              :label="avatarForm.$loading ? 'Uploading…' : 'Drop or click to upload'"
-              description="Max 2MB · PNG / JPG / WebP"
-              class="w-full"
-              :disabled="avatarForm.$loading"
+          {{ game.me?.avatar ?? '👤' }}
+        </div>
+        <span
+          :class="[
+            'hidden md:inline text-xs ticker-mono truncate max-w-[160px]',
+            isAdmin ? 'text-emerald-300' : 'text-slate-300',
+          ]"
+        >
+          {{ displayName }}
+        </span>
+      </UButton>
+      <template #content>
+        <div class="p-3 w-72 space-y-3">
+          <div class="text-xs text-slate-400 ticker-mono truncate">{{ user?.email }}</div>
+
+          <UForm
+            :state="nameForm"
+            :schema="nameForm.$schema"
+            @submit="nameForm.$submit()"
+            @error="focusFirstError"
+          >
+            <UFormField label="Display name" name="display_name">
+              <div class="flex gap-2">
+                <UInput
+                  v-model="nameForm.display_name"
+                  size="sm"
+                  class="flex-1"
+                  placeholder="Your name"
+                  :disabled="nameForm.$loading"
+                />
+                <UButton
+                  type="submit"
+                  size="sm"
+                  :loading="nameForm.$loading"
+                  :disabled="!nameForm.$hasChanges()"
+                >
+                  Save
+                </UButton>
+              </div>
+            </UFormField>
+            <UAlert
+              v-if="nameForm.$error"
+              color="error"
+              icon="i-lucide-circle-x"
+              :title="nameForm.$error.message"
+              class="mt-1"
             />
-          </UFormField>
-          <UAlert
-            v-if="avatarForm.$error"
-            color="error"
-            icon="i-lucide-circle-x"
-            :title="avatarForm.$error.message"
-            class="mt-1"
-          />
-        </UForm>
+          </UForm>
 
-        <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
-        <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
-          Sign out
-        </UButton>
-      </div>
-    </template>
-  </UPopover>
+          <UForm
+            :state="avatarForm"
+            :schema="avatarForm.$schema"
+            @submit="avatarForm.$submit()"
+          >
+            <UFormField label="Avatar" name="file">
+              <UFileUpload
+                v-model="avatarForm.file"
+                accept="image/*"
+                :label="avatarForm.$loading ? 'Uploading…' : 'Drop or click to upload'"
+                description="Max 2MB · PNG / JPG / WebP"
+                class="w-full"
+                :disabled="avatarForm.$loading"
+              />
+            </UFormField>
+            <UAlert
+              v-if="avatarForm.$error"
+              color="error"
+              icon="i-lucide-circle-x"
+              :title="avatarForm.$error.message"
+              class="mt-1"
+            />
+          </UForm>
+
+          <div v-if="isAdmin" class="text-xs text-emerald-300 ticker-mono">⬡ Admin</div>
+          <UButton block size="sm" color="error" variant="soft" icon="i-lucide-log-out" @click="signOut">
+            Sign out
+          </UButton>
+        </div>
+      </template>
+    </UPopover>
+  </ClientOnly>
 </template>
