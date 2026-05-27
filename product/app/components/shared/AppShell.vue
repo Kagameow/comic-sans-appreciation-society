@@ -37,19 +37,6 @@ const isDark = computed({
           >
             <span class="text-lg leading-none">{{ isComic ? '🎨' : '📝' }}</span>
           </UButton>
-          <ClientOnly>
-            <UButton
-              :icon="isDark ? 'i-lucide-moon' : 'i-lucide-sun'"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
-              @click="isDark = !isDark"
-            />
-            <template #fallback>
-              <div class="h-8 w-8" />
-            </template>
-          </ClientOnly>
           <SharedMultiplierBadge />
           <SharedPlayerBadge />
         </div>
