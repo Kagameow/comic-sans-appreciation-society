@@ -20,6 +20,7 @@ create table if not exists public.players (
 
 alter table public.players add column if not exists user_id    uuid unique references auth.users(id) on delete cascade;
 alter table public.players add column if not exists avatar_url text;
+alter table public.codes add column if not exists per_player_limit boolean not null default false;
 
 -- ─── codes (registry) ───────────────────────────────────────────────────────
 -- type: 'point' | 'quiz' | 'crossword' | 'challenge' | 'arcade' | 'victory' | 'super'
@@ -29,6 +30,7 @@ create table if not exists public.codes (
   value           integer not null default 0,
   is_super_code   boolean not null default false,
   single_use      boolean not null default false,
+  per_player_limit boolean not null default false,
   is_used         boolean not null default false,
   used_by         uuid references public.players(id) on delete set null,
   used_at         timestamptz,

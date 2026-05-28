@@ -21,6 +21,10 @@ export default defineEventHandler(async (event) => {
 
   if (row.singleUse && row.isUsed) return { kind: 'invalid' as const }
 
+  if (row.perPlayerLimit && await repo.hasSolvedCode(player.id, row.code)) {
+    return { kind: 'invalid' as const }
+  }
+
   if (row.type === 'victory') {
     const r = await repo.redeemVictory(player, row)
     return { kind: 'victory' as const, ...r }

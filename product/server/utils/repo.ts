@@ -35,6 +35,7 @@ type CodeRow = {
   value: number
   is_super_code: boolean
   single_use: boolean
+  per_player_limit: boolean
   is_used: boolean
   used_by: string | null
   used_at: string | null
@@ -71,6 +72,7 @@ function rowToCode(row: CodeRow): Code {
     value: row.value,
     isSuperCode: row.is_super_code,
     singleUse: row.single_use,
+    perPlayerLimit: row.per_player_limit ?? false,
     isUsed: row.is_used,
     usedBy: row.used_by ?? undefined,
     usedAt: row.used_at ? new Date(row.used_at).getTime() : undefined,
