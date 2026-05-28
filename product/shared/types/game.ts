@@ -22,6 +22,7 @@ export type Code = {
   value: number
   isSuperCode: boolean
   singleUse: boolean
+  perPlayerLimit: boolean
   isUsed: boolean
   usedBy?: string
   usedAt?: number
