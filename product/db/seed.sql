@@ -4,7 +4,7 @@
 
 insert into public.codes (code, type, value, is_super_code, single_use) values
   ('V3-READY',     'point',     50,  false, false),
-  ('COMPOSITION',  'point',     75,  false, false),
+  ('COMPOSITION',  'quiz',     100,  false, false),
   ('TELEPORT',     'point',     25,  false, false),
   ('PINIA',        'point',    100,  false, false),
   ('QUIZ',         'quiz',     100,  false, false),
