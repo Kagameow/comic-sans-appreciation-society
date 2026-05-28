@@ -2,4 +2,4 @@ export const TOTAL_GEMS = 5
 export const TOTAL_VICTORIES = 5
 
 export const SUPER_CLUE =
-  'Where the build artifacts rest and the green checkmark hums — seek the kiosk that never sleeps.'
+  'The Super Code has not been released yet. Check back after 3PM for the clues.'
