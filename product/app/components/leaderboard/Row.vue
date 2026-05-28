@@ -48,7 +48,8 @@ const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${prop
         {{ player.name }}
         <span v-if="isMe" class="text-xs text-emerald-300 font-normal">(you)</span>
       </div>
-      <div class="text-xs text-slate-400 truncate">{{ player.latest }}</div>
+      <!-- `player.latest` subtitle removed — it leaked code names ("PINIA resolved · +400")
+           into the leaderboard, which doubles as a spoiler for anyone hunting codes. -->
     </div>
     <div :class="['ticker-mono font-bold text-emerald-300 shrink-0', isPodium ? 'text-xl sm:text-3xl' : 'text-base sm:text-xl']">
       {{ player.points.toLocaleString() }}
