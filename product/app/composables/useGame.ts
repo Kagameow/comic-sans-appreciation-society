@@ -20,11 +20,20 @@ const DEFAULT_CONFIG: ConfigSnapshot = {
 export function useGame() {
   const store = useStore()
   const { data, refresh } = store.gameState.query(q => q.first('current'))
+  const { user } = useAuthSession()
 
   const config = computed<ConfigSnapshot>(() => data.value?.config ?? DEFAULT_CONFIG)
   const players = computed<Player[]>(() => data.value?.players ?? [])
   const me = computed<Player | null>(() => data.value?.me ?? null)
   const superWinner = computed<SuperEvent>(() => data.value?.superWinner ?? null)
+
+  // Fallback to find current player from players list using client-side email
+  const currentPlayer = computed(() => {
+    if (me.value) return me.value
+    if (!user.value?.email || players.value.length === 0) return null
+    const email = user.value.email.toLowerCase()
+    return players.value.find(p => p.email?.toLowerCase() === email) ?? null
+  })
 
   const activeMultiplier = computed(() => {
     const c = config.value
@@ -34,7 +43,7 @@ export function useGame() {
   })
   const isMultiplierActive = computed(() => activeMultiplier.value > 1)
   const clueUnlocked = computed(() => {
-    const m = me.value
+    const m = currentPlayer.value
     if (!m) return false
     return m.victories >= TOTAL_VICTORIES || m.gems >= TOTAL_GEMS
   })

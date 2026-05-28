@@ -281,7 +281,8 @@ export function useRepo(event: H3Event) {
     },
 
     async redeemSuper(player: Player, code: Code) {
-      if (player.victories < 5) return { ok: false as const, reason: 'locked' as const }
+      // Allow super code redemption with either 5 gems OR 5 victories
+      if (player.victories < 5 && player.gems < 5) return { ok: false as const, reason: 'locked' as const }
 
       // Race-safe claim: only the first writer where super_winner is null wins.
       const nowIso = new Date().toISOString()
