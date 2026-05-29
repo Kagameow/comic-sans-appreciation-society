@@ -8,9 +8,16 @@ const props = defineProps<{
   bumped: boolean
 }>()
 
-const medals = ['🥇', '🥈', '🥉']
+// Lucide medal icons render as inline SVG via @nuxt/icon, so the PiSignage
+// Raspberry Pi (which lacks a colour-emoji font) shows them correctly —
+// unlike the previous 🥇🥈🥉 character literals which tofu'd on the TV.
+// Order matches `rank`: 0 = gold, 1 = silver, 2 = bronze.
+const podiumIconClass = [
+  'text-amber-300',  // gold
+  'text-slate-300',  // silver
+  'text-orange-400', // bronze
+]
 const isPodium = computed(() => props.rank < 3)
-const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${props.rank + 1}`)
 </script>
 
 <template>
@@ -22,8 +29,13 @@ const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${prop
       bumped ? 'animate-rank-up' : '',
     ]"
   >
-    <div :class="['ticker-mono font-bold shrink-0', isPodium ? 'text-2xl sm:text-3xl w-8 sm:w-12' : 'text-base sm:text-lg w-8 sm:w-10 text-slate-400']">
-      {{ rankLabel }}
+    <div :class="['ticker-mono font-bold shrink-0 flex items-center justify-center', isPodium ? 'text-2xl sm:text-3xl w-8 sm:w-12' : 'text-base sm:text-lg w-8 sm:w-10 text-slate-400']">
+      <UIcon
+        v-if="isPodium"
+        name="i-lucide-medal"
+        :class="['h-7 w-7 sm:h-9 sm:w-9', podiumIconClass[rank]]"
+      />
+      <span v-else>#{{ rank + 1 }}</span>
     </div>
     <img
       v-if="player.avatarUrl"
@@ -37,11 +49,14 @@ const rankLabel = computed(() => isPodium.value ? medals[props.rank]! : `#${prop
     <div
       v-else
       :class="[
-        'rounded-full bg-white/10 flex items-center justify-center shrink-0',
-        isPodium ? 'h-10 w-10 sm:h-14 sm:w-14 text-2xl sm:text-3xl' : 'h-9 w-9 sm:h-10 sm:w-10 text-lg sm:text-xl',
+        'rounded-full bg-white/10 flex items-center justify-center shrink-0 text-slate-300',
+        isPodium ? 'h-10 w-10 sm:h-14 sm:w-14' : 'h-9 w-9 sm:h-10 sm:w-10',
       ]"
     >
-      {{ player.avatar }}
+      <!-- Emoji avatars (default '🦊' or user-chosen) render as tofu on the PiSignage
+           Pi, so the leaderboard falls back to a Lucide SVG glyph when no uploaded
+           avatarUrl is present. Player profile pages still show the emoji. -->
+      <UIcon name="i-lucide-user" :class="isPodium ? 'h-6 w-6 sm:h-8 sm:w-8' : 'h-5 w-5 sm:h-6 sm:w-6'" />
     </div>
     <div class="flex-1 min-w-0">
       <div :class="['font-semibold truncate', isPodium ? 'text-base sm:text-xl' : 'text-sm sm:text-base']">
